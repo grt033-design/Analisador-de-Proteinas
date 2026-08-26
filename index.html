@@ -1,20 +1,810 @@
-const CACHE_NAME = 'analisador-proteina-v4';
-const APP_SHELL = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
-self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)));
-  self.skipWaiting();
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover">
+<title>Analisador de Proteína — Foto do Prato</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#14171a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Proteína">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #14171a;
+    --surface: #1c2125;
+    --surface-2: #23282c;
+    --border: #2b3237;
+    --text: #f2efe8;
+    --text-dim: #8d949b;
+    --accent: #f2a65a;
+    --accent-dim: #c9843f;
+    --scan: #5eead4;
+    --danger: #e8615a;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: 'Space Grotesk', sans-serif; -webkit-font-smoothing: antialiased; }
+  body { min-height: 100vh; display: flex; justify-content: center; padding: max(32px, env(safe-area-inset-top)) 16px calc(60px + env(safe-area-inset-bottom)); }
+  .app { width: 100%; max-width: 460px; }
+  header { text-align: center; margin-bottom: 18px; }
+  .eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.16em; color: var(--accent); text-transform: uppercase; }
+  h1 { font-size: 28px; font-weight: 700; margin: 10px 0 8px; letter-spacing: -0.01em; }
+  .sub { color: var(--text-dim); font-size: 14px; line-height: 1.5; margin: 0; }
+
+  .install-row { display: flex; justify-content: center; margin: 16px 0 22px; }
+  .btn-install { background: transparent; color: var(--accent); border: 1px solid var(--accent-dim); border-radius: 20px; padding: 8px 16px; font-size: 12.5px; font-family: 'JetBrains Mono', monospace; letter-spacing: .02em; }
+  .ios-hint { color: var(--text-dim); font-size: 12px; line-height: 1.5; text-align: center; margin: 0 8px 22px; }
+  .ios-hint strong { color: var(--text); font-weight: 600; }
+
+  .today-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; }
+  .today-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .today-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .14em; color: var(--text-dim); }
+  .today-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .today-stat { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .today-stat-value { font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 700; color: var(--accent); }
+  .today-stat-label { font-size: 10px; color: var(--text-dim); letter-spacing: .02em; }
+  .today-meals-count { margin: 12px 0 0; text-align: center; font-size: 11.5px; color: var(--text-dim); }
+
+  .history-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 4px; margin-bottom: 20px; }
+  .history-list { list-style: none; margin: 0; padding: 0; }
+  .history-day { padding: 12px; border-bottom: 1px solid var(--border); }
+  .history-day:last-child { border-bottom: none; }
+  .history-day-header { display: flex; align-items: center; gap: 8px; }
+  .history-day-label { font-weight: 600; font-size: 13px; flex-shrink: 0; }
+  .history-day-totals { flex: 1; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 10.5px; }
+  .history-meals-list { list-style: none; margin: 8px 0 0; padding: 0 0 0 4px; border-left: 2px solid var(--border); }
+  .history-meal-row { display: flex; align-items: center; gap: 8px; padding: 6px 0 6px 10px; }
+  .history-meal-info { flex: 1; font-size: 11.5px; color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .history-meal-macros { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: var(--accent); flex-shrink: 0; }
+  .history-empty { color: var(--text-dim); font-size: 12.5px; text-align: center; padding: 16px; margin: 0; }
+  .btn-remove { background: none; border: none; color: var(--text-dim); font-size: 17px; line-height: 1; padding: 2px 6px; flex-shrink: 0; }
+  .btn-remove:hover { color: var(--danger); }
+
+  .scanner-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 20px; }
+
+  .upload-zone { padding: 48px 20px; display: flex; flex-direction: column; align-items: center; gap: 14px; border: 1.5px dashed var(--border); margin: 12px; border-radius: 10px; cursor: pointer; transition: border-color .2s, background .2s; text-align: center; }
+  .upload-zone:hover { border-color: var(--accent-dim); background: var(--surface-2); }
+  .upload-zone svg { width: 34px; height: 34px; stroke: var(--accent); }
+  .upload-zone span { color: var(--text-dim); font-size: 13.5px; max-width: 240px; }
+
+  .preview-wrap { position: relative; line-height: 0; }
+  .preview-wrap img { width: 100%; display: block; filter: saturate(0.9) brightness(0.85); }
+  .scan-line { position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--scan), transparent); box-shadow: 0 0 14px 3px var(--scan); animation: scanSweep 2.1s ease-in-out infinite; }
+  @keyframes scanSweep { 0% { top: 0%; opacity: 0; } 8% { opacity: 1; } 92% { opacity: 1; } 100% { top: 96%; opacity: 0; } }
+  .scan-label { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(0deg, rgba(0,0,0,.75), transparent); color: var(--scan); font-family: 'JetBrains Mono', monospace; font-size: 11.5px; letter-spacing: .04em; padding: 22px 14px 12px; text-align: center; }
+
+  .results { display: none; flex-direction: column; gap: 16px; }
+  .results.visible { display: flex; }
+  .total-readout { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 26px 20px; text-align: center; }
+  .total-value { font-family: 'JetBrains Mono', monospace; font-size: 52px; font-weight: 700; color: var(--accent); line-height: 1; }
+  .total-unit { display: block; color: var(--text-dim); font-size: 13px; margin-top: 6px; letter-spacing: .03em; }
+  .macro-mini-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border); }
+  .macro-mini { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .macro-mini span:first-child { font-family: 'JetBrains Mono', monospace; font-size: 14px; color: var(--text); }
+  .macro-mini-label { font-size: 10px; color: var(--text-dim); }
+
+  .confidence-tag { display: inline-block; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .05em; color: var(--text-dim); border: 1px solid var(--border); border-radius: 20px; padding: 5px 12px; margin: -4px auto 0; width: fit-content; }
+
+  .item-list { list-style: none; margin: 0; padding: 0; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .item-row { display: flex; flex-direction: column; gap: 9px; padding: 14px 16px; border-bottom: 1px solid var(--border); transition: background .2s; }
+  .item-row:last-child { border-bottom: none; }
+  .item-row.confirmed { background: rgba(94, 234, 212, 0.07); }
+  .item-top { display: flex; align-items: center; gap: 10px; }
+  .item-name-input { flex: 1; min-width: 0; background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 9px 10px; color: var(--text); font-family: 'Space Grotesk', sans-serif; font-size: 13.5px; }
+  .item-name-input:focus { outline: none; border-color: var(--accent-dim); }
+  .btn-confirm { flex-shrink: 0; width: 34px; height: 34px; border-radius: 50%; background: var(--surface-2); border: 1px solid var(--border); color: var(--text-dim); font-size: 15px; display: flex; align-items: center; justify-content: center; padding: 0; }
+  .item-row.confirmed .btn-confirm { background: var(--scan); border-color: var(--scan); color: #0b1f1c; }
+  .item-numbers-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px 12px; }
+  .num-field { display: flex; align-items: center; gap: 5px; }
+  .item-num-input { width: 56px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 7px 8px; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 12.5px; }
+  .item-num-input.protein { color: var(--accent); }
+  .item-num-input:focus { outline: none; border-color: var(--accent-dim); }
+  .item-num-input::-webkit-outer-spin-button, .item-num-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .unit { color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 10.5px; }
+
+  .observation { color: var(--text-dim); font-size: 12.5px; line-height: 1.5; margin: -6px 4px 0; }
+
+  button { font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 14px; border-radius: 10px; border: none; padding: 13px 18px; cursor: pointer; transition: opacity .15s; }
+  button:hover { opacity: .88; }
+  button:disabled { cursor: default; opacity: .7; }
+  .btn-primary { background: var(--accent); color: #241203; width: 100%; }
+  .btn-primary.registered { background: var(--scan); color: #0b1f1c; }
+  .btn-secondary { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); width: 100%; }
+
+  .error-box { display: none; background: var(--surface); border: 1px solid var(--danger); border-radius: var(--radius); padding: 18px; text-align: center; gap: 12px; flex-direction: column; }
+  .error-box.visible { display: flex; }
+  .error-box p { margin: 0; font-size: 13.5px; color: var(--text); }
+  .btn-retry { background: var(--danger); color: #fff; }
+
+  .food-table-toggle-row { text-align: center; margin: 22px 0 4px; }
+  .btn-link { background: none; border: none; color: var(--scan); font-family: 'JetBrains Mono', monospace; font-size: 11.5px; letter-spacing: .03em; padding: 6px; }
+  .btn-link:hover { opacity: .8; }
+  .food-table-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 4px; margin-top: 12px; }
+  .food-table-list { list-style: none; margin: 0; padding: 0; }
+  .food-table-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 11px 12px; border-bottom: 1px solid var(--border); }
+  .food-table-row:last-child { border-bottom: none; }
+  .food-table-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .food-table-name { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .food-table-meta { font-size: 11px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+  .food-table-empty { color: var(--text-dim); font-size: 12.5px; text-align: center; padding: 16px; margin: 0; }
+
+  .disclaimer { color: var(--text-dim); font-size: 11.5px; line-height: 1.6; text-align: center; margin-top: 26px; font-family: 'JetBrains Mono', monospace; opacity: .75; }
+
+  input[type="file"] { display: none; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <span class="eyebrow">Analisador de Proteína</span>
+    <h1>Aponte. Capture. Meça.</h1>
+    <p class="sub">Fotografe o prato, confira os macros e registre o que você realmente comeu.</p>
+  </header>
+
+  <div class="install-row" id="installRow" hidden>
+    <button type="button" class="btn-install" id="installBtn">Instalar app</button>
+  </div>
+  <p class="ios-hint" id="iosHint" hidden>No iPhone: toque em <strong>Compartilhar</strong> e depois em <strong>Adicionar à Tela de Início</strong> para instalar como app.</p>
+
+  <div class="today-card">
+    <div class="today-header">
+      <span class="today-label">CONSUMO DE HOJE</span>
+      <button type="button" class="btn-link" id="historyToggle">Histórico</button>
+    </div>
+    <div class="today-stats">
+      <div class="today-stat"><span class="today-stat-value" id="todayProtein">0 g</span><span class="today-stat-label">proteína</span></div>
+      <div class="today-stat"><span class="today-stat-value" id="todayCarb">0 g</span><span class="today-stat-label">carbo</span></div>
+      <div class="today-stat"><span class="today-stat-value" id="todayFat">0 g</span><span class="today-stat-label">gordura</span></div>
+      <div class="today-stat"><span class="today-stat-value" id="todayKcal">0 kcal</span><span class="today-stat-label">calorias</span></div>
+    </div>
+    <p class="today-meals-count"><span id="todayMealsCount">0</span> refeição(ões) registrada(s) hoje</p>
+  </div>
+  <div class="history-panel" id="historyPanel" hidden>
+    <ul class="history-list" id="historyList"></ul>
+    <p class="history-empty" id="historyEmpty">Nenhuma refeição registrada ainda.</p>
+  </div>
+
+  <div class="scanner-card" id="scannerCard">
+    <label class="upload-zone" id="uploadZone">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+        <circle cx="12" cy="13" r="4"/>
+      </svg>
+      <span>Toque para fotografar o prato ou escolher da galeria</span>
+      <input type="file" id="fileInput" accept="image/*" capture="environment">
+    </label>
+  </div>
+
+  <div class="results" id="results">
+    <div class="total-readout">
+      <span class="total-value" id="totalValue">0</span>
+      <span class="total-unit">gramas de proteína estimadas</span>
+      <div class="macro-mini-grid">
+        <div class="macro-mini"><span id="macroCarb">0 g</span><span class="macro-mini-label">carboidrato</span></div>
+        <div class="macro-mini"><span id="macroFat">0 g</span><span class="macro-mini-label">gordura</span></div>
+        <div class="macro-mini"><span id="macroKcal">0 kcal</span><span class="macro-mini-label">calorias</span></div>
+      </div>
+    </div>
+    <div class="confidence-tag" id="confidenceTag"></div>
+    <ul class="item-list" id="itemList"></ul>
+    <p class="observation" id="observationText"></p>
+    <button type="button" class="btn-primary" id="registerMealBtn">Registrar refeição de hoje</button>
+    <button type="button" class="btn-secondary" id="resetBtn">Analisar outra foto</button>
+  </div>
+
+  <div class="error-box" id="errorBox">
+    <p id="errorText"></p>
+    <button type="button" class="btn-retry" id="retryBtn">Tentar novamente</button>
+  </div>
+
+  <div class="food-table-toggle-row">
+    <button type="button" class="btn-link" id="foodTableToggle">Tabela de alimentos aprendidos (<span id="foodTableCount">0</span>)</button>
+  </div>
+  <div class="food-table-panel" id="foodTablePanel" hidden>
+    <ul class="food-table-list" id="foodTableList"></ul>
+    <p class="food-table-empty" id="foodTableEmpty">Nenhum alimento confirmado ainda. Confirme leituras nas análises para o app aprender com você.</p>
+  </div>
+
+  <p class="disclaimer">Estimativa gerada por IA a partir da imagem. Pratos mistos, molhos, sobreposição de alimentos e porções fora do enquadramento reduzem a precisão — use como referência, não como medição exata.</p>
+</div>
+
+<script>
+const BASE_PROMPT = `Você é um analista de nutrição especializado em estimar composição nutricional a partir de fotos de pratos de comida.
+Analise esta imagem e identifique cada item alimentar distinto visível no prato.
+Para cada item, estime o peso em gramas (usando referências visuais como o tamanho do prato, talheres e porções padrão) e os macronutrientes correspondentes: proteína, carboidrato e gordura, todos em gramas.
+Erros de estimativa de porção são a maior fonte de erro nesse tipo de análise — baseie-se em referências concretas da imagem e seja conservador quando a porção não estiver totalmente visível.
+
+Responda APENAS com um JSON válido, sem markdown, sem crases, sem texto antes ou depois, seguindo exatamente esta estrutura:
+{"itens":[{"nome":"string em português","peso_g":number,"proteina_g":number,"carboidrato_g":number,"gordura_g":number}],"confianca":"alta|média|baixa","observacao":"string curta em português explicando o que pode afetar a precisão desta estimativa específica"}`;
+
+const STORAGE_KEY = 'proteina_food_table_v1';
+const DAILY_LOG_KEY = 'proteina_daily_log_v1';
+
+const fileInput = document.getElementById('fileInput');
+const uploadZone = document.getElementById('uploadZone');
+const scannerCard = document.getElementById('scannerCard');
+const resultsEl = document.getElementById('results');
+const errorBox = document.getElementById('errorBox');
+const errorText = document.getElementById('errorText');
+const retryBtn = document.getElementById('retryBtn');
+const resetBtn = document.getElementById('resetBtn');
+const itemListEl = document.getElementById('itemList');
+const registerMealBtn = document.getElementById('registerMealBtn');
+const foodTableToggle = document.getElementById('foodTableToggle');
+const foodTablePanel = document.getElementById('foodTablePanel');
+const foodTableList = document.getElementById('foodTableList');
+const foodTableEmpty = document.getElementById('foodTableEmpty');
+const foodTableCountEl = document.getElementById('foodTableCount');
+const historyToggle = document.getElementById('historyToggle');
+const historyPanel = document.getElementById('historyPanel');
+const historyList = document.getElementById('historyList');
+const historyEmpty = document.getElementById('historyEmpty');
+
+let lastDataUrl = null;
+let currentItems = [];
+let mealRegistered = false;
+
+fileInput.addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  resultsEl.classList.remove('visible');
+  errorBox.classList.remove('visible');
+  try {
+    const dataUrl = await resizeImage(file);
+    lastDataUrl = dataUrl;
+    showScanning(dataUrl);
+    const parsed = await analyzeImage(dataUrl);
+    renderResults(parsed);
+  } catch (err) {
+    showError(err.message || 'Não foi possível analisar a imagem.');
+  }
 });
 
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k))))
-  );
-  self.clients.claim();
+retryBtn.addEventListener('click', async () => {
+  if (!lastDataUrl) return;
+  errorBox.classList.remove('visible');
+  showScanning(lastDataUrl);
+  try {
+    const parsed = await analyzeImage(lastDataUrl);
+    renderResults(parsed);
+  } catch (err) {
+    showError(err.message || 'Não foi possível analisar a imagem.');
+  }
 });
 
-self.addEventListener('fetch', (event) => {
-  // Só intercepta GET do próprio app shell - a chamada de análise (POST na função) sempre vai direto pra rede
-  if (event.request.method !== 'GET' || event.request.url.includes('/.netlify/functions/')) return;
-  event.respondWith(caches.match(event.request).then((cached) => cached || fetch(event.request)));
+resetBtn.addEventListener('click', () => {
+  resultsEl.classList.remove('visible');
+  scannerCard.innerHTML = '';
+  scannerCard.appendChild(uploadZone);
+  fileInput.value = '';
+  lastDataUrl = null;
+  currentItems = [];
+  mealRegistered = false;
 });
+
+async function resizeImage(file, maxDim = 1024, quality = 0.85) {
+  let bitmap;
+  try {
+    bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
+  } catch (e) {
+    bitmap = await createImageBitmap(file);
+  }
+  let { width, height } = bitmap;
+  if (width > height && width > maxDim) {
+    height = Math.round(height * maxDim / width);
+    width = maxDim;
+  } else if (height >= width && height > maxDim) {
+    width = Math.round(width * maxDim / height);
+    height = maxDim;
+  }
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  canvas.getContext('2d').drawImage(bitmap, 0, 0, width, height);
+  bitmap.close();
+  return canvas.toDataURL('image/jpeg', quality);
+}
+
+function showScanning(dataUrl) {
+  scannerCard.innerHTML = `
+    <div class="preview-wrap">
+      <img src="${dataUrl}" alt="Prato fotografado">
+      <div class="scan-line"></div>
+      <div class="scan-label">Analisando composição do prato...</div>
+    </div>`;
+}
+
+function loadFoodTable() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch (e) {
+    return {};
+  }
+}
+
+function saveFoodTable(table) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(table));
+  } catch (e) {
+    // armazenamento indisponível (modo privado, preview sandboxado etc.) - ignora silenciosamente
+  }
+}
+
+function normalizeKey(name) {
+  return (name || '').trim().toLowerCase();
+}
+
+function avg(oldVal, newVal, n) {
+  return Math.round(((Number(oldVal) || 0) * n + (Number(newVal) || 0)) / (n + 1));
+}
+
+function buildReferenceEntries() {
+  const table = loadFoodTable();
+  return Object.values(table)
+    .sort((a, b) => b.confirmacoes - a.confirmacoes)
+    .slice(0, 40)
+    .map(e => ({ nome: e.nome, peso_g: e.peso_g, proteina_g: e.proteina_g, carboidrato_g: e.carboidrato_g, gordura_g: e.gordura_g, confirmacoes: e.confirmacoes }));
+}
+
+function buildPrompt() {
+  const ref = buildReferenceEntries();
+  if (ref.length === 0) return BASE_PROMPT;
+  return BASE_PROMPT + `
+
+Tabela de referência com alimentos que este usuário já confirmou manualmente em análises anteriores (peso e macros médios, com base no número de confirmações). Se algum alimento desta foto for igual ou muito parecido a um item da tabela, use esses valores para calibrar sua estimativa, pois refletem as porções reais deste usuário. Se não houver correspondência clara, estime normalmente:
+${JSON.stringify(ref)}`;
+}
+
+async function analyzeImage(dataUrl) {
+  const base64Data = dataUrl.split(',')[1];
+  const response = await fetch('/.netlify/functions/analyze', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 1000,
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: base64Data } },
+          { type: 'text', text: buildPrompt() }
+        ]
+      }]
+    })
+  });
+  if (!response.ok) {
+    throw new Error('Falha ao consultar o serviço de análise (status ' + response.status + ').');
+  }
+  const data = await response.json();
+  const textBlocks = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n');
+  return extractJSON(textBlocks);
+}
+
+function extractJSON(text) {
+  let cleaned = (text || '').trim();
+  cleaned = cleaned.replace(/^```json\s*/i, '').replace(/^```\s*/, '').replace(/```\s*$/, '');
+  const start = cleaned.indexOf('{');
+  const end = cleaned.lastIndexOf('}');
+  if (start === -1 || end === -1) throw new Error('A resposta da análise veio em formato inesperado.');
+  return JSON.parse(cleaned.slice(start, end + 1));
+}
+
+const confidenceLabels = { alta: 'Confiança alta', média: 'Confiança média', media: 'Confiança média', baixa: 'Confiança baixa' };
+
+function renderResults(parsed) {
+  currentItems = (parsed.itens || []).map(it => ({
+    nome: it.nome || '',
+    peso_g: Math.round(it.peso_g || 0),
+    proteina_g: Math.round(it.proteina_g || 0),
+    carboidrato_g: Math.round(it.carboidrato_g || 0),
+    gordura_g: Math.round(it.gordura_g || 0),
+    confirmado: false
+  }));
+  document.getElementById('confidenceTag').textContent = confidenceLabels[parsed.confianca] || (parsed.confianca || '');
+  document.getElementById('observationText').textContent = parsed.observacao || '';
+  mealRegistered = false;
+  updateRegisterButton();
+  renderItemList();
+  updateTotal();
+  resultsEl.classList.add('visible');
+}
+
+function makeNumberField(item, idx, field, unitLabel) {
+  const wrap = document.createElement('div');
+  wrap.className = 'num-field';
+  const input = document.createElement('input');
+  input.type = 'number';
+  input.min = '0';
+  input.className = 'item-num-input' + (field === 'proteina_g' ? ' protein' : '');
+  input.value = item[field];
+  input.dataset.idx = idx;
+  input.dataset.field = field;
+  const unit = document.createElement('span');
+  unit.className = 'unit';
+  unit.textContent = unitLabel;
+  wrap.append(input, unit);
+  return wrap;
+}
+
+function renderItemList() {
+  itemListEl.innerHTML = '';
+  currentItems.forEach((item, idx) => {
+    const li = document.createElement('li');
+    li.className = 'item-row' + (item.confirmado ? ' confirmed' : '');
+
+    const top = document.createElement('div');
+    top.className = 'item-top';
+
+    const nameInput = document.createElement('input');
+    nameInput.className = 'item-name-input';
+    nameInput.value = item.nome;
+    nameInput.dataset.idx = idx;
+    nameInput.dataset.field = 'nome';
+
+    const confirmBtn = document.createElement('button');
+    confirmBtn.type = 'button';
+    confirmBtn.className = 'btn-confirm';
+    confirmBtn.title = 'Confirmar leitura';
+    confirmBtn.dataset.idx = idx;
+    confirmBtn.textContent = '✓';
+
+    top.append(nameInput, confirmBtn);
+
+    const numbersGrid = document.createElement('div');
+    numbersGrid.className = 'item-numbers-grid';
+    numbersGrid.append(
+      makeNumberField(item, idx, 'peso_g', 'g'),
+      makeNumberField(item, idx, 'proteina_g', 'g prot'),
+      makeNumberField(item, idx, 'carboidrato_g', 'g carb'),
+      makeNumberField(item, idx, 'gordura_g', 'g gord')
+    );
+
+    li.append(top, numbersGrid);
+    itemListEl.appendChild(li);
+  });
+}
+
+itemListEl.addEventListener('input', (e) => {
+  const idx = e.target.dataset.idx;
+  const field = e.target.dataset.field;
+  if (idx === undefined || !field) return;
+  const item = currentItems[idx];
+  if (!item) return;
+  item[field] = field === 'nome' ? e.target.value : (parseFloat(e.target.value) || 0);
+  if (item.confirmado) {
+    item.confirmado = false;
+    const li = e.target.closest('.item-row');
+    if (li) li.classList.remove('confirmed');
+  }
+  if (mealRegistered) {
+    mealRegistered = false;
+    updateRegisterButton();
+  }
+  updateTotal();
+});
+
+itemListEl.addEventListener('click', (e) => {
+  const btn = e.target.closest('.btn-confirm');
+  if (!btn) return;
+  confirmItem(Number(btn.dataset.idx));
+});
+
+function updateTotal() {
+  const totals = currentItems.reduce((acc, it) => {
+    acc.proteina += Number(it.proteina_g) || 0;
+    acc.carboidrato += Number(it.carboidrato_g) || 0;
+    acc.gordura += Number(it.gordura_g) || 0;
+    return acc;
+  }, { proteina: 0, carboidrato: 0, gordura: 0 });
+  const kcal = totals.proteina * 4 + totals.carboidrato * 4 + totals.gordura * 9;
+  document.getElementById('totalValue').textContent = Math.round(totals.proteina);
+  document.getElementById('macroCarb').textContent = Math.round(totals.carboidrato) + ' g';
+  document.getElementById('macroFat').textContent = Math.round(totals.gordura) + ' g';
+  document.getElementById('macroKcal').textContent = Math.round(kcal) + ' kcal';
+  return {
+    proteina_g: Math.round(totals.proteina),
+    carboidrato_g: Math.round(totals.carboidrato),
+    gordura_g: Math.round(totals.gordura),
+    calorias_kcal: Math.round(kcal)
+  };
+}
+
+function confirmItem(idx) {
+  const item = currentItems[idx];
+  if (!item) return;
+  const key = normalizeKey(item.nome);
+  if (!key) return;
+  const table = loadFoodTable();
+  const existing = table[key];
+  if (existing) {
+    const n = existing.confirmacoes;
+    existing.peso_g = avg(existing.peso_g, item.peso_g, n);
+    existing.proteina_g = avg(existing.proteina_g, item.proteina_g, n);
+    existing.carboidrato_g = avg(existing.carboidrato_g, item.carboidrato_g, n);
+    existing.gordura_g = avg(existing.gordura_g, item.gordura_g, n);
+    existing.confirmacoes = n + 1;
+    existing.nome = item.nome;
+    existing.atualizado_em = new Date().toISOString();
+  } else {
+    table[key] = { nome: item.nome, peso_g: item.peso_g, proteina_g: item.proteina_g, carboidrato_g: item.carboidrato_g, gordura_g: item.gordura_g, confirmacoes: 1, atualizado_em: new Date().toISOString() };
+  }
+  saveFoodTable(table);
+  item.confirmado = true;
+  renderItemList();
+  updateTotal();
+  updateFoodTableCount();
+}
+
+function updateFoodTableCount() {
+  foodTableCountEl.textContent = Object.keys(loadFoodTable()).length;
+}
+
+function renderFoodTablePanel() {
+  const table = loadFoodTable();
+  const entries = Object.entries(table).sort((a, b) => b[1].confirmacoes - a[1].confirmacoes);
+  foodTableList.innerHTML = '';
+  foodTableCountEl.textContent = entries.length;
+  if (entries.length === 0) {
+    foodTableEmpty.hidden = false;
+    return;
+  }
+  foodTableEmpty.hidden = true;
+  entries.forEach(([key, e]) => {
+    const li = document.createElement('li');
+    li.className = 'food-table-row';
+
+    const info = document.createElement('div');
+    info.className = 'food-table-info';
+    const name = document.createElement('span');
+    name.className = 'food-table-name';
+    name.textContent = e.nome;
+    const meta = document.createElement('span');
+    meta.className = 'food-table-meta';
+    meta.textContent = e.peso_g + 'g · ' + e.proteina_g + 'g P · ' + (e.carboidrato_g || 0) + 'g C · ' + (e.gordura_g || 0) + 'g G · ' + e.confirmacoes + 'x';
+    info.append(name, meta);
+
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'btn-remove';
+    removeBtn.title = 'Remover da tabela';
+    removeBtn.dataset.key = key;
+    removeBtn.textContent = '×';
+
+    li.append(info, removeBtn);
+    foodTableList.appendChild(li);
+  });
+}
+
+foodTableToggle.addEventListener('click', () => {
+  foodTablePanel.hidden = !foodTablePanel.hidden;
+  if (!foodTablePanel.hidden) renderFoodTablePanel();
+});
+
+foodTableList.addEventListener('click', (e) => {
+  const btn = e.target.closest('.btn-remove');
+  if (!btn) return;
+  const table = loadFoodTable();
+  delete table[btn.dataset.key];
+  saveFoodTable(table);
+  renderFoodTablePanel();
+});
+
+// --- Registro diário de refeições ---
+function todayKey() {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
+function loadDailyLog() {
+  try {
+    const raw = localStorage.getItem(DAILY_LOG_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch (e) {
+    return {};
+  }
+}
+
+function saveDailyLog(log) {
+  try {
+    localStorage.setItem(DAILY_LOG_KEY, JSON.stringify(log));
+  } catch (e) {
+    // ignora silenciosamente
+  }
+}
+
+function dayTotals(dayEntry) {
+  return (dayEntry.refeicoes || []).reduce((acc, r) => {
+    acc.proteina_g += r.proteina_g || 0;
+    acc.carboidrato_g += r.carboidrato_g || 0;
+    acc.gordura_g += r.gordura_g || 0;
+    acc.calorias_kcal += r.calorias_kcal || 0;
+    return acc;
+  }, { proteina_g: 0, carboidrato_g: 0, gordura_g: 0, calorias_kcal: 0 });
+}
+
+function registerMeal() {
+  if (mealRegistered || currentItems.length === 0) return;
+  const totals = updateTotal();
+  const log = loadDailyLog();
+  const key = todayKey();
+  if (!log[key]) log[key] = { refeicoes: [] };
+  const now = new Date();
+  log[key].refeicoes.push({
+    id: Date.now(),
+    hora: String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0'),
+    proteina_g: totals.proteina_g,
+    carboidrato_g: totals.carboidrato_g,
+    gordura_g: totals.gordura_g,
+    calorias_kcal: totals.calorias_kcal,
+    itens: currentItems.map(it => it.nome)
+  });
+  saveDailyLog(log);
+  mealRegistered = true;
+  updateRegisterButton();
+  renderTodaySummary();
+}
+
+function updateRegisterButton() {
+  if (mealRegistered) {
+    registerMealBtn.textContent = 'Refeição registrada ✓';
+    registerMealBtn.disabled = true;
+    registerMealBtn.classList.add('registered');
+  } else {
+    registerMealBtn.textContent = 'Registrar refeição de hoje';
+    registerMealBtn.disabled = false;
+    registerMealBtn.classList.remove('registered');
+  }
+}
+
+registerMealBtn.addEventListener('click', registerMeal);
+
+function renderTodaySummary() {
+  const log = loadDailyLog();
+  const entry = log[todayKey()] || { refeicoes: [] };
+  const totals = dayTotals(entry);
+  document.getElementById('todayProtein').textContent = Math.round(totals.proteina_g) + ' g';
+  document.getElementById('todayCarb').textContent = Math.round(totals.carboidrato_g) + ' g';
+  document.getElementById('todayFat').textContent = Math.round(totals.gordura_g) + ' g';
+  document.getElementById('todayKcal').textContent = Math.round(totals.calorias_kcal) + ' kcal';
+  document.getElementById('todayMealsCount').textContent = entry.refeicoes.length;
+}
+
+function formatDateLabel(key) {
+  if (key === todayKey()) return 'Hoje';
+  const parts = key.split('-');
+  return parts[2] + '/' + parts[1];
+}
+
+function renderHistoryPanel() {
+  const log = loadDailyLog();
+  const keys = Object.keys(log).sort().reverse();
+  historyList.innerHTML = '';
+  historyEmpty.hidden = keys.length > 0;
+  keys.forEach((key) => {
+    const entry = log[key];
+    const totals = dayTotals(entry);
+
+    const dayLi = document.createElement('li');
+    dayLi.className = 'history-day';
+
+    const dayHeader = document.createElement('div');
+    dayHeader.className = 'history-day-header';
+    const dayLabel = document.createElement('span');
+    dayLabel.className = 'history-day-label';
+    dayLabel.textContent = formatDateLabel(key);
+    const dayTotalsEl = document.createElement('span');
+    dayTotalsEl.className = 'history-day-totals';
+    dayTotalsEl.textContent = Math.round(totals.proteina_g) + 'g P · ' + Math.round(totals.carboidrato_g) + 'g C · ' + Math.round(totals.gordura_g) + 'g G · ' + Math.round(totals.calorias_kcal) + ' kcal';
+    const removeDayBtn = document.createElement('button');
+    removeDayBtn.type = 'button';
+    removeDayBtn.className = 'btn-remove';
+    removeDayBtn.title = 'Remover esse dia';
+    removeDayBtn.dataset.dayKey = key;
+    removeDayBtn.textContent = '×';
+    dayHeader.append(dayLabel, dayTotalsEl, removeDayBtn);
+
+    const mealsList = document.createElement('ul');
+    mealsList.className = 'history-meals-list';
+    (entry.refeicoes || []).forEach((r) => {
+      const mealLi = document.createElement('li');
+      mealLi.className = 'history-meal-row';
+      const mealInfo = document.createElement('span');
+      mealInfo.className = 'history-meal-info';
+      mealInfo.textContent = r.hora + ' · ' + (r.itens || []).join(', ');
+      const mealMacros = document.createElement('span');
+      mealMacros.className = 'history-meal-macros';
+      mealMacros.textContent = Math.round(r.proteina_g) + 'g P';
+      const removeMealBtn = document.createElement('button');
+      removeMealBtn.type = 'button';
+      removeMealBtn.className = 'btn-remove';
+      removeMealBtn.title = 'Remover refeição';
+      removeMealBtn.dataset.dayKey = key;
+      removeMealBtn.dataset.mealId = r.id;
+      removeMealBtn.textContent = '×';
+      mealLi.append(mealInfo, mealMacros, removeMealBtn);
+      mealsList.appendChild(mealLi);
+    });
+
+    dayLi.append(dayHeader, mealsList);
+    historyList.appendChild(dayLi);
+  });
+}
+
+historyToggle.addEventListener('click', () => {
+  historyPanel.hidden = !historyPanel.hidden;
+  if (!historyPanel.hidden) renderHistoryPanel();
+});
+
+historyList.addEventListener('click', (e) => {
+  const btn = e.target.closest('.btn-remove');
+  if (!btn) return;
+  const log = loadDailyLog();
+  const dayKey = btn.dataset.dayKey;
+  if (btn.dataset.mealId) {
+    if (log[dayKey]) {
+      log[dayKey].refeicoes = log[dayKey].refeicoes.filter((r) => String(r.id) !== btn.dataset.mealId);
+      if (log[dayKey].refeicoes.length === 0) delete log[dayKey];
+    }
+  } else {
+    delete log[dayKey];
+  }
+  saveDailyLog(log);
+  renderHistoryPanel();
+  renderTodaySummary();
+});
+
+function showError(message) {
+  errorText.textContent = message;
+  errorBox.classList.add('visible');
+  const label = scannerCard.querySelector('.scan-label');
+  if (label) label.textContent = 'Falha na análise';
+  const scanLine = scannerCard.querySelector('.scan-line');
+  if (scanLine) scanLine.style.display = 'none';
+}
+
+// --- PWA: install prompt (Android/Chrome) + iOS hint + service worker ---
+const installRow = document.getElementById('installRow');
+const installBtn = document.getElementById('installBtn');
+const iosHint = document.getElementById('iosHint');
+let deferredPrompt = null;
+
+const isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  installRow.hidden = false;
+});
+
+installBtn.addEventListener('click', async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  installRow.hidden = true;
+});
+
+window.addEventListener('appinstalled', () => { installRow.hidden = true; });
+
+const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+if (isIOS && !isStandalone) iosHint.hidden = false;
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+
+updateFoodTableCount();
+renderTodaySummary();
+</script>
+</body>
+</html>
