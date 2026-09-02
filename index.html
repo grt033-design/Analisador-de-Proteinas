@@ -6,9 +6,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover">
 <title>Analisador de Proteína — Foto do Prato</title>
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#14171a">
+<meta name="theme-color" content="#FBF7F2">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Proteína">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="icon" href="icon-192.png" type="image/png">
@@ -18,107 +18,128 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.1/chart.umd.min.js"></script>
 <style>
   :root {
-    --bg: #14171a;
-    --surface: #1c2125;
-    --surface-2: #23282c;
-    --border: #2b3237;
-    --text: #f2efe8;
-    --text-dim: #8d949b;
-    --accent: #f2a65a;
-    --accent-dim: #c9843f;
-    --scan: #5eead4;
-    --danger: #e8615a;
+    --bg: #FBF7F2;
+    --surface: #FFFFFF;
+    --surface-2: #F3EEE5;
+    --border: #EAE2D4;
+    --text: #241F18;
+    --text-dim: #8A8172;
+    --accent: #FF6B45;
+    --accent-dim: #E25730;
+    --scan: #14B8A6;
+    --danger: #F0304F;
+    --protein: #FF3D82;
+    --carb: #FFAE00;
+    --fat: #8B6BFF;
     --radius: 14px;
+    --shadow: 0 1px 3px rgba(36,31,24,0.05), 0 6px 16px rgba(36,31,24,0.05);
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: 'Space Grotesk', sans-serif; -webkit-font-smoothing: antialiased; }
   body { min-height: 100vh; display: flex; justify-content: center; padding: max(32px, env(safe-area-inset-top)) 16px calc(60px + env(safe-area-inset-bottom)); }
   .app { width: 100%; max-width: 460px; }
   header { text-align: center; margin-bottom: 18px; }
-  .eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.16em; color: var(--accent); text-transform: uppercase; }
+  .eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.16em; color: var(--accent); text-transform: uppercase; font-weight: 700; }
   h1 { font-size: 28px; font-weight: 700; margin: 10px 0 8px; letter-spacing: -0.01em; }
   .sub { color: var(--text-dim); font-size: 14px; line-height: 1.5; margin: 0; }
 
-  .tab-bar { display: flex; gap: 6px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 4px; margin-bottom: 18px; }
+  .tab-bar { display: flex; gap: 6px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 4px; margin-bottom: 18px; box-shadow: var(--shadow); }
   .tab-btn { flex: 1; background: none; border: none; color: var(--text-dim); font-size: 13px; font-weight: 600; padding: 10px; border-radius: 9px; }
-  .tab-btn.active { background: var(--surface-2); color: var(--accent); }
+  .tab-btn.active { background: var(--accent); color: #fff; }
   .tab-panel[hidden] { display: none; }
 
   .install-row { display: flex; justify-content: center; margin: 16px 0 22px; }
-  .btn-install { background: transparent; color: var(--accent); border: 1px solid var(--accent-dim); border-radius: 20px; padding: 8px 16px; font-size: 12.5px; font-family: 'JetBrains Mono', monospace; letter-spacing: .02em; }
+  .btn-install { background: transparent; color: var(--accent); border: 1.5px solid var(--accent); border-radius: 20px; padding: 8px 16px; font-size: 12.5px; font-family: 'JetBrains Mono', monospace; letter-spacing: .02em; }
   .ios-hint { color: var(--text-dim); font-size: 12px; line-height: 1.5; text-align: center; margin: 0 8px 22px; }
   .ios-hint strong { color: var(--text); font-weight: 600; }
 
-  .today-mini { display: flex; align-items: center; justify-content: space-between; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 16px; margin-bottom: 20px; font-size: 12.5px; }
+  .today-mini { display: flex; align-items: center; justify-content: space-between; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 16px; margin-bottom: 20px; font-size: 12.5px; box-shadow: var(--shadow); }
   .today-mini-text { color: var(--text-dim); }
-  .today-mini-text strong { color: var(--accent); font-family: 'JetBrains Mono', monospace; }
+  .today-mini-text strong { color: var(--protein); font-family: 'JetBrains Mono', monospace; }
   .today-mini a.btn-link { margin: 0; }
 
-  .scanner-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 20px; }
+  .scanner-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 20px; box-shadow: var(--shadow); }
 
-  .upload-zone { padding: 48px 20px; display: flex; flex-direction: column; align-items: center; gap: 14px; border: 1.5px dashed var(--border); margin: 12px; border-radius: 10px; cursor: pointer; transition: border-color .2s, background .2s; text-align: center; }
-  .upload-zone:hover { border-color: var(--accent-dim); background: var(--surface-2); }
+  .upload-zone { padding: 40px 20px 24px; display: flex; flex-direction: column; align-items: center; gap: 14px; border: 1.5px dashed var(--border); margin: 12px 12px 4px; border-radius: 10px; cursor: pointer; transition: border-color .2s, background .2s; text-align: center; }
+  .upload-zone:hover { border-color: var(--accent); background: var(--surface-2); }
   .upload-zone svg { width: 34px; height: 34px; stroke: var(--accent); }
   .upload-zone span { color: var(--text-dim); font-size: 13.5px; max-width: 240px; }
 
+  .voice-row { text-align: center; padding: 4px 12px 14px; }
+  .btn-voice { background: none; border: 1.5px dashed var(--border); color: var(--text-dim); border-radius: 20px; padding: 10px 18px; font-size: 12.5px; width: auto; font-weight: 600; }
+  .btn-voice:hover { border-color: var(--fat); color: var(--fat); }
+  .btn-voice.listening { border-color: var(--danger); color: var(--danger); border-style: solid; animation: voicePulse 1s ease-in-out infinite; }
+  @keyframes voicePulse { 0%, 100% { opacity: 1; } 50% { opacity: .55; } }
+
+  .voice-processing { padding: 34px 20px; text-align: center; }
+  .voice-transcript { color: var(--text); font-style: italic; font-size: 14px; margin: 0 0 18px; line-height: 1.5; }
+  .scan-label-standalone { color: var(--scan); font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+
   .preview-wrap { position: relative; line-height: 0; }
-  .preview-wrap img { width: 100%; display: block; filter: saturate(0.9) brightness(0.85); }
+  .preview-wrap img { width: 100%; display: block; filter: saturate(1.1); }
   .scan-line { position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--scan), transparent); box-shadow: 0 0 14px 3px var(--scan); animation: scanSweep 2.1s ease-in-out infinite; }
   @keyframes scanSweep { 0% { top: 0%; opacity: 0; } 8% { opacity: 1; } 92% { opacity: 1; } 100% { top: 96%; opacity: 0; } }
-  .scan-label { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(0deg, rgba(0,0,0,.75), transparent); color: var(--scan); font-family: 'JetBrains Mono', monospace; font-size: 11.5px; letter-spacing: .04em; padding: 22px 14px 12px; text-align: center; }
+  .scan-label { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(0deg, rgba(0,0,0,.75), transparent); color: #fff; font-family: 'JetBrains Mono', monospace; font-size: 11.5px; letter-spacing: .04em; padding: 22px 14px 12px; text-align: center; }
   .pulse-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--scan); margin-right: 7px; animation: pulseDot 1.2s ease-in-out infinite; vertical-align: middle; }
   @keyframes pulseDot { 0%, 100% { opacity: .35; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1); } }
-  .scan-timer { color: var(--text); font-weight: 600; }
+  .scan-timer { font-weight: 600; }
 
   .results { display: none; flex-direction: column; gap: 16px; }
   .results.visible { display: flex; }
-  .total-readout { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 26px 20px; text-align: center; }
-  .total-value { font-family: 'JetBrains Mono', monospace; font-size: 52px; font-weight: 700; color: var(--accent); line-height: 1; }
+  .total-readout { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 26px 20px; text-align: center; box-shadow: var(--shadow); }
+  .total-value { font-family: 'JetBrains Mono', monospace; font-size: 52px; font-weight: 700; color: var(--protein); line-height: 1; }
   .total-unit { display: block; color: var(--text-dim); font-size: 13px; margin-top: 6px; letter-spacing: .03em; }
   .macro-mini-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border); }
   .macro-mini { display: flex; flex-direction: column; align-items: center; gap: 2px; }
-  .macro-mini span:first-child { font-family: 'JetBrains Mono', monospace; font-size: 14px; color: var(--text); }
+  .macro-mini span:first-child { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700; }
+  .macro-mini.carb span:first-child { color: var(--carb); }
+  .macro-mini.fat span:first-child { color: var(--fat); }
+  .macro-mini.kcal span:first-child { color: var(--accent); }
   .macro-mini-label { font-size: 10px; color: var(--text-dim); }
 
   .confidence-tag { display: inline-block; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .05em; color: var(--text-dim); border: 1px solid var(--border); border-radius: 20px; padding: 5px 12px; margin: -4px auto 0; width: fit-content; }
 
-  .item-list { list-style: none; margin: 0; padding: 0; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .item-list { list-style: none; margin: 0; padding: 0; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
   .item-row { display: flex; flex-direction: column; gap: 7px; padding: 14px 16px; border-bottom: 1px solid var(--border); transition: background .2s; }
   .item-row:last-child { border-bottom: none; }
-  .item-row.confirmed { background: rgba(94, 234, 212, 0.07); }
+  .item-row.confirmed { background: rgba(20, 184, 166, 0.08); }
   .item-top { display: flex; align-items: center; gap: 10px; }
+  .item-emoji { font-size: 20px; flex-shrink: 0; line-height: 1; }
   .item-name-input { flex: 1; min-width: 0; background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 9px 10px; color: var(--text); font-family: 'Space Grotesk', sans-serif; font-size: 13.5px; }
-  .item-name-input:focus { outline: none; border-color: var(--accent-dim); }
-  .source-tag { display: inline-block; font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: .03em; color: var(--text-dim); }
-  .source-tag.taco { color: var(--scan); }
+  .item-name-input:focus { outline: none; border-color: var(--accent); }
+  .source-tag { display: inline-block; font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: .03em; color: var(--text-dim); margin-left: 30px; }
+  .source-tag.taco { color: var(--scan); font-weight: 600; }
   .btn-confirm { flex-shrink: 0; width: 34px; height: 34px; border-radius: 50%; background: var(--surface-2); border: 1px solid var(--border); color: var(--text-dim); font-size: 15px; display: flex; align-items: center; justify-content: center; padding: 0; }
-  .item-row.confirmed .btn-confirm { background: var(--scan); border-color: var(--scan); color: #0b1f1c; }
+  .item-row.confirmed .btn-confirm { background: var(--scan); border-color: var(--scan); color: #fff; }
   .item-numbers-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px 12px; }
   .num-field { display: flex; align-items: center; gap: 5px; }
-  .item-num-input { width: 56px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 7px 8px; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 12.5px; }
-  .item-num-input.protein { color: var(--accent); }
-  .item-num-input:focus { outline: none; border-color: var(--accent-dim); }
+  .item-num-input { width: 56px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 7px 8px; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 12.5px; font-weight: 600; }
+  .item-num-input.protein { color: var(--protein); }
+  .item-num-input.carb { color: var(--carb); }
+  .item-num-input.fat { color: var(--fat); }
+  .item-num-input:focus { outline: none; border-color: var(--accent); }
   .item-num-input::-webkit-outer-spin-button, .item-num-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
   .unit { color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 10.5px; }
 
   .observation { color: var(--text-dim); font-size: 12.5px; line-height: 1.5; margin: -6px 4px 0; }
 
-  button, select { font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 14px; border-radius: 10px; border: none; padding: 13px 18px; cursor: pointer; transition: opacity .15s; }
+  button, select { font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 14px; border-radius: 10px; border: none; padding: 13px 18px; cursor: pointer; transition: opacity .15s, transform .1s; }
   button:hover { opacity: .88; }
-  button:disabled { cursor: default; opacity: .7; }
-  .btn-primary { background: var(--accent); color: #241203; width: 100%; }
-  .btn-primary.registered { background: var(--scan); color: #0b1f1c; }
+  button:active { transform: scale(0.98); }
+  button:disabled { cursor: default; opacity: .6; }
+  .btn-primary { background: var(--accent); color: #fff; width: 100%; }
+  .btn-primary.registered { background: var(--scan); color: #fff; }
   .btn-secondary { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); width: 100%; }
 
-  .error-box { display: none; background: var(--surface); border: 1px solid var(--danger); border-radius: var(--radius); padding: 18px; text-align: center; gap: 12px; flex-direction: column; }
+  .error-box { display: none; background: var(--surface); border: 1px solid var(--danger); border-radius: var(--radius); padding: 18px; text-align: center; gap: 12px; flex-direction: column; box-shadow: var(--shadow); }
   .error-box.visible { display: flex; }
   .error-box p { margin: 0; font-size: 13.5px; color: var(--text); }
   .btn-retry { background: var(--danger); color: #fff; }
 
   .food-table-toggle-row { text-align: center; margin: 22px 0 4px; }
-  .btn-link { background: none; border: none; color: var(--scan); font-family: 'JetBrains Mono', monospace; font-size: 11.5px; letter-spacing: .03em; padding: 6px; font-weight: 500; }
-  .btn-link:hover { opacity: .8; }
-  .food-table-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 4px; margin-top: 12px; }
+  .btn-link { background: none; border: none; color: var(--scan); font-family: 'JetBrains Mono', monospace; font-size: 11.5px; letter-spacing: .03em; padding: 6px; font-weight: 700; }
+  .btn-link:hover { opacity: .75; }
+  .food-table-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 4px; margin-top: 12px; box-shadow: var(--shadow); }
   .food-table-list { list-style: none; margin: 0; padding: 0; }
   .food-table-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 11px 12px; border-bottom: 1px solid var(--border); }
   .food-table-row:last-child { border-bottom: none; }
@@ -127,52 +148,57 @@
   .food-table-meta { font-size: 11px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
   .food-table-empty { color: var(--text-dim); font-size: 12.5px; text-align: center; padding: 16px; margin: 0; }
 
-  .disclaimer { color: var(--text-dim); font-size: 11.5px; line-height: 1.6; text-align: center; margin-top: 26px; font-family: 'JetBrains Mono', monospace; opacity: .75; }
+  .disclaimer { color: var(--text-dim); font-size: 11.5px; line-height: 1.6; text-align: center; margin-top: 26px; font-family: 'JetBrains Mono', monospace; }
 
   /* --- Aba Minha Dieta --- */
-  .section-title { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .12em; color: var(--text-dim); text-transform: uppercase; margin: 0 0 12px; }
-  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 20px; }
+  .section-title { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .12em; color: var(--text-dim); text-transform: uppercase; margin: 0 0 12px; font-weight: 700; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 20px; box-shadow: var(--shadow); }
   .calc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; margin-bottom: 14px; }
   .calc-field { display: flex; flex-direction: column; gap: 5px; }
   .calc-field.full { grid-column: 1 / -1; }
   .calc-field label { font-size: 11px; color: var(--text-dim); }
   .calc-field input, .calc-field select { width: 100%; background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 9px 10px; color: var(--text); font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 400; }
-  .calc-field input:focus, .calc-field select:focus { outline: none; border-color: var(--accent-dim); }
+  .calc-field input:focus, .calc-field select:focus { outline: none; border-color: var(--accent); }
   .calc-results { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
   .calc-result { display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; }
   .calc-result-value { font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 700; color: var(--accent); }
   .calc-result-label { font-size: 10px; color: var(--text-dim); }
 
   .stats-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; text-align: center; box-shadow: var(--shadow); }
+  .stat-value { display: block; font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 700; color: var(--accent); }
+  .stat-value.protein { color: var(--protein); }
+  .stat-label { font-size: 10.5px; color: var(--text-dim); margin-top: 3px; display: block; }
+
   .today-hero { margin-bottom: 20px; text-align: center; }
   .today-hero-kcal { padding-bottom: 4px; }
   .today-hero-value { font-family: 'JetBrains Mono', monospace; font-size: 40px; font-weight: 700; color: var(--accent); line-height: 1; }
   .today-hero-label { display: block; color: var(--text-dim); font-size: 12px; margin-top: 4px; }
   .macro-progress-list { display: flex; flex-direction: column; gap: 12px; margin-top: 18px; text-align: left; }
   .macro-progress-top { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--text-dim); margin-bottom: 5px; }
-  .macro-progress-top span:first-child { color: var(--text); font-weight: 600; }
-  .macro-progress-track { height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; }
-  .macro-progress-fill { height: 100%; border-radius: 3px; background: var(--accent); transition: width .3s ease; }
+  .macro-progress-top span:first-child { color: var(--text); font-weight: 700; }
+  .macro-progress-track { height: 7px; border-radius: 4px; background: var(--surface-2); overflow: hidden; }
+  .macro-progress-fill { height: 100%; border-radius: 4px; transition: width .3s ease; }
+  .macro-progress-fill.protein { background: var(--protein); }
+  .macro-progress-fill.carb { background: var(--carb); }
+  .macro-progress-fill.fat { background: var(--fat); }
   .macro-progress-fill.over { background: var(--danger); }
-  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; text-align: center; }
-  .stat-value { display: block; font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 700; color: var(--accent); }
-  .stat-label { font-size: 10.5px; color: var(--text-dim); margin-top: 3px; display: block; }
 
   .chart-wrap { position: relative; height: 200px; margin-top: 4px; }
   .chart-empty { color: var(--text-dim); font-size: 12.5px; text-align: center; padding: 30px 10px; margin: 0; }
   .chart-ref-note { font-size: 10.5px; color: var(--text-dim); text-align: center; margin: 10px 0 0; }
 
-  .history-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 4px; margin-bottom: 20px; }
+  .history-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 4px; margin-bottom: 20px; box-shadow: var(--shadow); }
   .history-list { list-style: none; margin: 0; padding: 0; }
   .history-day { padding: 12px; border-bottom: 1px solid var(--border); }
   .history-day:last-child { border-bottom: none; }
   .history-day-header { display: flex; align-items: center; gap: 8px; }
-  .history-day-label { font-weight: 600; font-size: 13px; flex-shrink: 0; }
+  .history-day-label { font-weight: 700; font-size: 13px; flex-shrink: 0; }
   .history-day-totals { flex: 1; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 10.5px; }
   .history-meals-list { list-style: none; margin: 8px 0 0; padding: 0 0 0 4px; border-left: 2px solid var(--border); }
   .history-meal-row { display: flex; align-items: center; gap: 8px; padding: 6px 0 6px 10px; }
   .history-meal-info { flex: 1; font-size: 11.5px; color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .history-meal-macros { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: var(--accent); flex-shrink: 0; }
+  .history-meal-macros { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: var(--protein); font-weight: 600; flex-shrink: 0; }
   .history-empty { color: var(--text-dim); font-size: 12.5px; text-align: center; padding: 16px; margin: 0; }
   .btn-remove { background: none; border: none; color: var(--text-dim); font-size: 17px; line-height: 1; padding: 2px 6px; flex-shrink: 0; }
   .btn-remove:hover { color: var(--danger); }
@@ -214,6 +240,9 @@
         <span>Toque para fotografar o prato ou escolher da galeria</span>
         <input type="file" id="fileInput" accept="image/*" capture="environment">
       </label>
+      <div class="voice-row" id="voiceRow">
+        <button type="button" class="btn-voice" id="voiceBtn">🎤 Ou descreva por voz</button>
+      </div>
     </div>
 
     <div class="results" id="results">
@@ -221,9 +250,9 @@
         <span class="total-value" id="totalValue">0</span>
         <span class="total-unit">gramas de proteína estimadas</span>
         <div class="macro-mini-grid">
-          <div class="macro-mini"><span id="macroCarb">0 g</span><span class="macro-mini-label">carboidrato</span></div>
-          <div class="macro-mini"><span id="macroFat">0 g</span><span class="macro-mini-label">gordura</span></div>
-          <div class="macro-mini"><span id="macroKcal">0 kcal</span><span class="macro-mini-label">calorias</span></div>
+          <div class="macro-mini carb"><span id="macroCarb">0 g</span><span class="macro-mini-label">carboidrato</span></div>
+          <div class="macro-mini fat"><span id="macroFat">0 g</span><span class="macro-mini-label">gordura</span></div>
+          <div class="macro-mini kcal"><span id="macroKcal">0 kcal</span><span class="macro-mini-label">calorias</span></div>
         </div>
       </div>
       <div class="confidence-tag" id="confidenceTag"></div>
@@ -246,7 +275,7 @@
       <p class="food-table-empty" id="foodTableEmpty">Nenhum alimento confirmado ainda. Confirme leituras nas análises para o app aprender com você.</p>
     </div>
 
-    <p class="disclaimer">Estimativa gerada por IA e pela tabela TACO a partir da imagem. Pratos mistos, molhos, sobreposição de alimentos e porções fora do enquadramento reduzem a precisão — use como referência, não como medição exata.</p>
+    <p class="disclaimer">Estimativa gerada por IA e pela tabela TACO a partir da imagem ou descrição por voz. Pratos mistos, molhos, sobreposição de alimentos e porções fora do enquadramento reduzem a precisão — use como referência, não como medição exata.</p>
   </div>
 
   <!-- ===== ABA MINHA DIETA ===== -->
@@ -297,7 +326,7 @@
     <div class="stats-row">
       <div class="stat-card"><span class="stat-value" id="statHojeKcal">0</span><span class="stat-label">kcal hoje</span></div>
       <div class="stat-card"><span class="stat-value" id="statMediaMes">0</span><span class="stat-label">média kcal/dia (mês)</span></div>
-      <div class="stat-card"><span class="stat-value" id="statProtMes">0 g</span><span class="stat-label">proteína acumulada (mês)</span></div>
+      <div class="stat-card"><span class="stat-value protein" id="statProtMes">0 g</span><span class="stat-label">proteína acumulada (mês)</span></div>
       <div class="stat-card"><span class="stat-value" id="statDiasRegistrados">0</span><span class="stat-label">dias com refeição registrada</span></div>
     </div>
 
@@ -329,6 +358,16 @@ Erros de estimativa de porção são a maior fonte de erro nesse tipo de anális
 
 Responda APENAS com um JSON válido, sem markdown, sem crases, sem texto antes ou depois, seguindo exatamente esta estrutura:
 {"itens":[{"nome":"string em português","peso_g":number,"proteina_g":number,"carboidrato_g":number,"gordura_g":number}],"confianca":"alta|média|baixa","observacao":"string curta em português explicando o que pode afetar a precisão desta estimativa específica"}`;
+
+function buildAudioPrompt(descricao) {
+  return `Você é um analista de nutrição especializado em estimar composição nutricional a partir de descrições faladas de refeições.
+O usuário descreveu em voz alta o que comeu (transcrição automática, pode ter pequenos erros): "${descricao}"
+
+Identifique cada item alimentar mencionado. Para cada item, estime o peso em gramas (baseado em porções padrão brasileiras, a menos que uma quantidade específica tenha sido dita) e os macronutrientes: proteína, carboidrato e gordura, em gramas.
+
+Responda APENAS com um JSON válido, sem markdown, sem crases, sem texto antes ou depois, seguindo exatamente esta estrutura:
+{"itens":[{"nome":"string em português","peso_g":number,"proteina_g":number,"carboidrato_g":number,"gordura_g":number}],"confianca":"alta|média|baixa","observacao":"string curta em português explicando o que pode afetar a precisão desta estimativa"}`;
+}
 
 const STORAGE_KEY = 'proteina_food_table_v1';
 
@@ -423,6 +462,39 @@ const TACO_TABLE = [
   { termos: ['refrigerante'], proteina: 0, carboidrato: 10.4, gordura: 0 }
 ];
 
+const FOOD_EMOJI_MAP = [
+  { termos: ['frango', 'galinha'], emoji: '🍗' },
+  { termos: ['carne', 'bife', 'picanha', 'costela', 'acém', 'acem', 'patinho', 'lombo'], emoji: '🥩' },
+  { termos: ['peixe', 'tilápia', 'tilapia', 'salmão', 'salmao', 'sardinha'], emoji: '🐟' },
+  { termos: ['camarão', 'camarao'], emoji: '🍤' },
+  { termos: ['ovo'], emoji: '🥚' },
+  { termos: ['arroz'], emoji: '🍚' },
+  { termos: ['feijão', 'feijao', 'lentilha', 'grão de bico', 'grao de bico'], emoji: '🫘' },
+  { termos: ['batata frita'], emoji: '🍟' },
+  { termos: ['batata', 'mandioca', 'aipim', 'macaxeira'], emoji: '🥔' },
+  { termos: ['macarrão', 'macarrao', 'massa', 'lasanha', 'nhoque', 'espaguete'], emoji: '🍝' },
+  { termos: ['pão', 'pao'], emoji: '🍞' },
+  { termos: ['queijo', 'mussarela', 'muçarela', 'requeijão', 'requeijao'], emoji: '🧀' },
+  { termos: ['alface', 'salada', 'rúcula', 'rucula', 'vinagrete'], emoji: '🥗' },
+  { termos: ['tomate'], emoji: '🍅' },
+  { termos: ['cenoura'], emoji: '🥕' },
+  { termos: ['brócolis', 'brocolis', 'couve'], emoji: '🥦' },
+  { termos: ['banana'], emoji: '🍌' },
+  { termos: ['maçã', 'maca'], emoji: '🍎' },
+  { termos: ['laranja'], emoji: '🍊' },
+  { termos: ['abacate'], emoji: '🥑' },
+  { termos: ['pizza'], emoji: '🍕' },
+  { termos: ['hambúrguer', 'hamburguer', 'hamburger'], emoji: '🍔' },
+  { termos: ['pastel', 'coxinha', 'croquete', 'esfirra', 'esfiha'], emoji: '🥟' },
+  { termos: ['leite', 'iogurte'], emoji: '🥛' },
+  { termos: ['chocolate', 'pudim'], emoji: '🍫' },
+  { termos: ['suco', 'refrigerante'], emoji: '🥤' },
+  { termos: ['bacon', 'linguiça', 'linguica', 'salsicha'], emoji: '🌭' },
+  { termos: ['milho'], emoji: '🌽' },
+  { termos: ['farofa'], emoji: '🌾' },
+  { termos: ['abóbora', 'abobora'], emoji: '🎃' }
+];
+
 function normalizeText(s) {
   return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
@@ -443,8 +515,19 @@ function matchTaco(nome) {
   return best;
 }
 
+function getFoodEmoji(nome) {
+  const norm = normalizeText(nome);
+  for (const entry of FOOD_EMOJI_MAP) {
+    for (const termo of entry.termos) {
+      if (norm.includes(normalizeText(termo))) return entry.emoji;
+    }
+  }
+  return '🍽️';
+}
+
 const fileInput = document.getElementById('fileInput');
 const uploadZone = document.getElementById('uploadZone');
+const voiceRow = document.getElementById('voiceRow');
 const scannerCard = document.getElementById('scannerCard');
 const resultsEl = document.getElementById('results');
 const errorBox = document.getElementById('errorBox');
@@ -464,6 +547,7 @@ const historyEmpty = document.getElementById('historyEmpty');
 let lastDataUrl = null;
 let currentItems = [];
 let mealRegistered = false;
+let lastRetryFn = null;
 
 fileInput.addEventListener('change', async (e) => {
   const file = e.target.files[0];
@@ -473,6 +557,7 @@ fileInput.addEventListener('change', async (e) => {
   try {
     const dataUrl = await resizeImage(file);
     lastDataUrl = dataUrl;
+    lastRetryFn = () => analyzeImage(dataUrl);
     showScanning(dataUrl);
     const parsed = await analyzeImage(dataUrl);
     renderResults(parsed);
@@ -482,14 +567,15 @@ fileInput.addEventListener('change', async (e) => {
 });
 
 retryBtn.addEventListener('click', async () => {
-  if (!lastDataUrl) return;
+  if (!lastRetryFn) return;
   errorBox.classList.remove('visible');
-  showScanning(lastDataUrl);
+  if (lastDataUrl) showScanning(lastDataUrl);
+  else startScanTimer();
   try {
-    const parsed = await analyzeImage(lastDataUrl);
+    const parsed = await lastRetryFn();
     renderResults(parsed);
   } catch (err) {
-    showError(err.message || 'Não foi possível analisar a imagem.');
+    showError(err.message || 'Não foi possível analisar novamente.');
   }
 });
 
@@ -497,8 +583,10 @@ resetBtn.addEventListener('click', () => {
   resultsEl.classList.remove('visible');
   scannerCard.innerHTML = '';
   scannerCard.appendChild(uploadZone);
+  scannerCard.appendChild(voiceRow);
   fileInput.value = '';
   lastDataUrl = null;
+  lastRetryFn = null;
   currentItems = [];
   mealRegistered = false;
 });
@@ -539,6 +627,29 @@ function showScanning(dataUrl) {
   startScanTimer();
 }
 
+function showVoiceProcessing(transcript) {
+  scannerCard.innerHTML = '';
+  const wrap = document.createElement('div');
+  wrap.className = 'voice-processing';
+  const p = document.createElement('p');
+  p.className = 'voice-transcript';
+  p.textContent = '“' + transcript + '”';
+  const label = document.createElement('div');
+  label.className = 'scan-label-standalone';
+  const dot = document.createElement('span');
+  dot.className = 'pulse-dot';
+  label.appendChild(dot);
+  label.appendChild(document.createTextNode('Analisando descrição... '));
+  const timer = document.createElement('span');
+  timer.className = 'scan-timer';
+  timer.id = 'scanTimer';
+  timer.textContent = '0s';
+  label.appendChild(timer);
+  wrap.append(p, label);
+  scannerCard.appendChild(wrap);
+  startScanTimer();
+}
+
 function startScanTimer() {
   stopScanTimer();
   scanStartTime = Date.now();
@@ -553,6 +664,57 @@ function stopScanTimer() {
     clearInterval(scanTimerId);
     scanTimerId = null;
   }
+}
+
+// --- Entrada por voz ---
+const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+const voiceBtn = document.getElementById('voiceBtn');
+
+if (!SpeechRecognitionAPI) {
+  voiceRow.hidden = true;
+} else {
+  let listening = false;
+
+  voiceBtn.addEventListener('click', () => {
+    if (listening) return;
+    const recognition = new SpeechRecognitionAPI();
+    recognition.lang = 'pt-BR';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    listening = true;
+    voiceBtn.textContent = '🎤 Ouvindo... fale agora';
+    voiceBtn.classList.add('listening');
+
+    recognition.onresult = async (event) => {
+      const transcript = event.results[0][0].transcript;
+      resultsEl.classList.remove('visible');
+      errorBox.classList.remove('visible');
+      lastDataUrl = null;
+      lastRetryFn = () => analyzeText(transcript);
+      showVoiceProcessing(transcript);
+      try {
+        const parsed = await analyzeText(transcript);
+        renderResults(parsed);
+      } catch (err) {
+        showError(err.message || 'Não foi possível analisar a descrição.');
+      }
+    };
+
+    recognition.onerror = () => {
+      listening = false;
+      voiceBtn.textContent = '🎤 Ou descreva por voz';
+      voiceBtn.classList.remove('listening');
+    };
+
+    recognition.onend = () => {
+      listening = false;
+      voiceBtn.textContent = '🎤 Ou descreva por voz';
+      voiceBtn.classList.remove('listening');
+    };
+
+    recognition.start();
+  });
 }
 
 function loadFoodTable() {
@@ -588,12 +750,12 @@ function buildReferenceEntries() {
     .map(e => ({ nome: e.nome, peso_g: e.peso_g, proteina_g: e.proteina_g, carboidrato_g: e.carboidrato_g, gordura_g: e.gordura_g, confirmacoes: e.confirmacoes }));
 }
 
-function buildPrompt() {
+function referenceSuffix() {
   const ref = buildReferenceEntries();
-  if (ref.length === 0) return BASE_PROMPT;
-  return BASE_PROMPT + `
+  if (ref.length === 0) return '';
+  return `
 
-Tabela de referência com alimentos que este usuário já confirmou manualmente em análises anteriores (peso e macros médios, com base no número de confirmações). Se algum alimento desta foto for igual ou muito parecido a um item da tabela, use esses valores para calibrar sua estimativa, pois refletem as porções reais deste usuário. Se não houver correspondência clara, estime normalmente:
+Tabela de referência com alimentos que este usuário já confirmou manualmente em análises anteriores (peso e macros médios, com base no número de confirmações). Se algum alimento desta refeição for igual ou muito parecido a um item da tabela, use esses valores para calibrar sua estimativa, pois refletem as porções reais deste usuário. Se não houver correspondência clara, estime normalmente:
 ${JSON.stringify(ref)}`;
 }
 
@@ -609,8 +771,29 @@ async function analyzeImage(dataUrl) {
         role: 'user',
         content: [
           { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: base64Data } },
-          { type: 'text', text: buildPrompt() }
+          { type: 'text', text: BASE_PROMPT + referenceSuffix() }
         ]
+      }]
+    })
+  });
+  if (!response.ok) {
+    throw new Error('Falha ao consultar o serviço de análise (status ' + response.status + ').');
+  }
+  const data = await response.json();
+  const textBlocks = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n');
+  return extractJSON(textBlocks);
+}
+
+async function analyzeText(descricao) {
+  const response = await fetch('/.netlify/functions/analyze', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 1000,
+      messages: [{
+        role: 'user',
+        content: buildAudioPrompt(descricao) + referenceSuffix()
       }]
     })
   });
@@ -669,13 +852,13 @@ function renderResults(parsed) {
   resultsEl.classList.add('visible');
 }
 
-function makeNumberField(item, idx, field, unitLabel) {
+function makeNumberField(item, idx, field, unitLabel, colorClass) {
   const wrap = document.createElement('div');
   wrap.className = 'num-field';
   const input = document.createElement('input');
   input.type = 'number';
   input.min = '0';
-  input.className = 'item-num-input' + (field === 'proteina_g' ? ' protein' : '');
+  input.className = 'item-num-input' + (colorClass ? ' ' + colorClass : '');
   input.value = item[field];
   input.dataset.idx = idx;
   input.dataset.field = field;
@@ -695,6 +878,10 @@ function renderItemList() {
     const top = document.createElement('div');
     top.className = 'item-top';
 
+    const emojiSpan = document.createElement('span');
+    emojiSpan.className = 'item-emoji';
+    emojiSpan.textContent = getFoodEmoji(item.nome);
+
     const nameInput = document.createElement('input');
     nameInput.className = 'item-name-input';
     nameInput.value = item.nome;
@@ -708,7 +895,7 @@ function renderItemList() {
     confirmBtn.dataset.idx = idx;
     confirmBtn.textContent = '✓';
 
-    top.append(nameInput, confirmBtn);
+    top.append(emojiSpan, nameInput, confirmBtn);
 
     const sourceTag = document.createElement('span');
     sourceTag.className = 'source-tag' + (item.fonte === 'TACO' ? ' taco' : '');
@@ -717,10 +904,10 @@ function renderItemList() {
     const numbersGrid = document.createElement('div');
     numbersGrid.className = 'item-numbers-grid';
     numbersGrid.append(
-      makeNumberField(item, idx, 'peso_g', 'g'),
-      makeNumberField(item, idx, 'proteina_g', 'g prot'),
-      makeNumberField(item, idx, 'carboidrato_g', 'g carb'),
-      makeNumberField(item, idx, 'gordura_g', 'g gord')
+      makeNumberField(item, idx, 'peso_g', 'g', null),
+      makeNumberField(item, idx, 'proteina_g', 'g prot', 'protein'),
+      makeNumberField(item, idx, 'carboidrato_g', 'g carb', 'carb'),
+      makeNumberField(item, idx, 'gordura_g', 'g gord', 'fat')
     );
 
     li.append(top, sourceTag, numbersGrid);
@@ -821,7 +1008,7 @@ function renderFoodTablePanel() {
     info.className = 'food-table-info';
     const name = document.createElement('span');
     name.className = 'food-table-name';
-    name.textContent = e.nome;
+    name.textContent = getFoodEmoji(e.nome) + ' ' + e.nome;
     const meta = document.createElement('span');
     meta.className = 'food-table-meta';
     meta.textContent = e.peso_g + 'g · ' + e.proteina_g + 'g P · ' + (e.carboidrato_g || 0) + 'g C · ' + (e.gordura_g || 0) + 'g G · ' + e.confirmacoes + 'x';
@@ -857,7 +1044,7 @@ function showError(message) {
   stopScanTimer();
   errorText.textContent = message;
   errorBox.classList.add('visible');
-  const label = scannerCard.querySelector('.scan-label');
+  const label = scannerCard.querySelector('.scan-label, .scan-label-standalone');
   if (label) label.textContent = 'Falha na análise';
   const scanLine = scannerCard.querySelector('.scan-line');
   if (scanLine) scanLine.style.display = 'none';
@@ -1154,14 +1341,15 @@ function renderTodayHero() {
   heroValue.style.color = restante >= 0 ? 'var(--accent)' : 'var(--danger)';
 
   const metas = {
-    Proteína: Math.round(perfil.tdee * 0.3 / 4),
-    Carboidrato: Math.round(perfil.tdee * 0.4 / 4),
-    Gordura: Math.round(perfil.tdee * 0.3 / 9)
+    Proteína: { valor: Math.round(perfil.tdee * 0.3 / 4), classe: 'protein' },
+    Carboidrato: { valor: Math.round(perfil.tdee * 0.4 / 4), classe: 'carb' },
+    Gordura: { valor: Math.round(perfil.tdee * 0.3 / 9), classe: 'fat' }
   };
   const consumidos = { Proteína: hoje.proteina_g, Carboidrato: hoje.carboidrato_g, Gordura: hoje.gordura_g };
 
   Object.keys(metas).forEach((label) => {
-    const meta = metas[label];
+    const meta = metas[label].valor;
+    const classe = metas[label].classe;
     const consumido = Math.round(consumidos[label]);
     const pct = meta > 0 ? Math.min(100, Math.round((consumido / meta) * 100)) : 0;
 
@@ -1179,7 +1367,7 @@ function renderTodayHero() {
     const track = document.createElement('div');
     track.className = 'macro-progress-track';
     const fill = document.createElement('div');
-    fill.className = 'macro-progress-fill' + (consumido > meta ? ' over' : '');
+    fill.className = 'macro-progress-fill ' + (consumido > meta ? 'over' : classe);
     fill.style.width = pct + '%';
     track.appendChild(fill);
 
@@ -1232,10 +1420,13 @@ function renderCharts() {
   const referencia = perfil ? Math.round(perfil.tdee) : null;
   document.getElementById('dailyChartNote').hidden = !!referencia;
 
+  const gridColor = '#EFE8DA';
+  const tickColor = '#8A8172';
+
   const daily = buildDailyChartData(14);
-  const dailyDatasets = [{ label: 'Calorias consumidas', data: daily.data, backgroundColor: '#f2a65a', borderRadius: 4, order: 2 }];
+  const dailyDatasets = [{ label: 'Calorias consumidas', data: daily.data, backgroundColor: '#FF6B45', borderRadius: 4, order: 2 }];
   if (referencia) {
-    dailyDatasets.push({ label: 'Meta estimada (TDEE)', data: daily.labels.map(() => referencia), type: 'line', borderColor: '#5eead4', borderWidth: 2, pointRadius: 0, fill: false, order: 1 });
+    dailyDatasets.push({ label: 'Meta estimada (TDEE)', data: daily.labels.map(() => referencia), type: 'line', borderColor: '#14B8A6', borderWidth: 2, pointRadius: 0, fill: false, order: 1 });
   }
   if (dailyChartInstance) dailyChartInstance.destroy();
   dailyChartInstance = new Chart(document.getElementById('dailyChart').getContext('2d'), {
@@ -1243,10 +1434,10 @@ function renderCharts() {
     data: { labels: daily.labels, datasets: dailyDatasets },
     options: {
       responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { labels: { color: '#8d949b', font: { family: 'JetBrains Mono', size: 9 }, boxWidth: 10 } } },
+      plugins: { legend: { labels: { color: tickColor, font: { family: 'JetBrains Mono', size: 9 }, boxWidth: 10 } } },
       scales: {
-        x: { ticks: { color: '#8d949b', font: { size: 9 } }, grid: { display: false } },
-        y: { ticks: { color: '#8d949b', font: { size: 9 } }, grid: { color: '#2b3237' } }
+        x: { ticks: { color: tickColor, font: { size: 9 } }, grid: { display: false } },
+        y: { ticks: { color: tickColor, font: { size: 9 } }, grid: { color: gridColor } }
       }
     }
   });
@@ -1255,9 +1446,9 @@ function renderCharts() {
   document.getElementById('monthlyChartEmpty').hidden = monthly.labels.length > 0;
   document.getElementById('monthlyChart').style.display = monthly.labels.length > 0 ? 'block' : 'none';
   if (monthly.labels.length > 0) {
-    const monthlyDatasets = [{ label: 'Média kcal/dia', data: monthly.data, backgroundColor: '#f2a65a', borderRadius: 4, order: 2 }];
+    const monthlyDatasets = [{ label: 'Média kcal/dia', data: monthly.data, backgroundColor: '#FF6B45', borderRadius: 4, order: 2 }];
     if (referencia) {
-      monthlyDatasets.push({ label: 'Meta estimada (TDEE)', data: monthly.labels.map(() => referencia), type: 'line', borderColor: '#5eead4', borderWidth: 2, pointRadius: 0, fill: false, order: 1 });
+      monthlyDatasets.push({ label: 'Meta estimada (TDEE)', data: monthly.labels.map(() => referencia), type: 'line', borderColor: '#14B8A6', borderWidth: 2, pointRadius: 0, fill: false, order: 1 });
     }
     if (monthlyChartInstance) monthlyChartInstance.destroy();
     monthlyChartInstance = new Chart(document.getElementById('monthlyChart').getContext('2d'), {
@@ -1265,10 +1456,10 @@ function renderCharts() {
       data: { labels: monthly.labels, datasets: monthlyDatasets },
       options: {
         responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { labels: { color: '#8d949b', font: { family: 'JetBrains Mono', size: 9 }, boxWidth: 10 } } },
+        plugins: { legend: { labels: { color: tickColor, font: { family: 'JetBrains Mono', size: 9 }, boxWidth: 10 } } },
         scales: {
-          x: { ticks: { color: '#8d949b', font: { size: 9 } }, grid: { display: false } },
-          y: { ticks: { color: '#8d949b', font: { size: 9 } }, grid: { color: '#2b3237' } }
+          x: { ticks: { color: tickColor, font: { size: 9 } }, grid: { display: false } },
+          y: { ticks: { color: tickColor, font: { size: 9 } }, grid: { color: gridColor } }
         }
       }
     });
