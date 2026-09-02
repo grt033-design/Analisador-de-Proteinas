@@ -15,6 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
 <style>
   :root {
     --bg: #14171a;
@@ -38,19 +39,118 @@
   h1 { font-size: 28px; font-weight: 700; margin: 10px 0 8px; letter-spacing: -0.01em; }
   .sub { color: var(--text-dim); font-size: 14px; line-height: 1.5; margin: 0; }
 
+  .tab-bar { display: flex; gap: 6px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 4px; margin-bottom: 18px; }
+  .tab-btn { flex: 1; background: none; border: none; color: var(--text-dim); font-size: 13px; font-weight: 600; padding: 10px; border-radius: 9px; }
+  .tab-btn.active { background: var(--surface-2); color: var(--accent); }
+  .tab-panel[hidden] { display: none; }
+
   .install-row { display: flex; justify-content: center; margin: 16px 0 22px; }
   .btn-install { background: transparent; color: var(--accent); border: 1px solid var(--accent-dim); border-radius: 20px; padding: 8px 16px; font-size: 12.5px; font-family: 'JetBrains Mono', monospace; letter-spacing: .02em; }
   .ios-hint { color: var(--text-dim); font-size: 12px; line-height: 1.5; text-align: center; margin: 0 8px 22px; }
   .ios-hint strong { color: var(--text); font-weight: 600; }
 
-  .today-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; }
-  .today-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-  .today-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .14em; color: var(--text-dim); }
-  .today-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
-  .today-stat { display: flex; flex-direction: column; align-items: center; gap: 2px; }
-  .today-stat-value { font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 700; color: var(--accent); }
-  .today-stat-label { font-size: 10px; color: var(--text-dim); letter-spacing: .02em; }
-  .today-meals-count { margin: 12px 0 0; text-align: center; font-size: 11.5px; color: var(--text-dim); }
+  .today-mini { display: flex; align-items: center; justify-content: space-between; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 16px; margin-bottom: 20px; font-size: 12.5px; }
+  .today-mini-text { color: var(--text-dim); }
+  .today-mini-text strong { color: var(--accent); font-family: 'JetBrains Mono', monospace; }
+  .today-mini a.btn-link { margin: 0; }
+
+  .scanner-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 20px; }
+
+  .upload-zone { padding: 48px 20px; display: flex; flex-direction: column; align-items: center; gap: 14px; border: 1.5px dashed var(--border); margin: 12px; border-radius: 10px; cursor: pointer; transition: border-color .2s, background .2s; text-align: center; }
+  .upload-zone:hover { border-color: var(--accent-dim); background: var(--surface-2); }
+  .upload-zone svg { width: 34px; height: 34px; stroke: var(--accent); }
+  .upload-zone span { color: var(--text-dim); font-size: 13.5px; max-width: 240px; }
+
+  .preview-wrap { position: relative; line-height: 0; }
+  .preview-wrap img { width: 100%; display: block; filter: saturate(0.9) brightness(0.85); }
+  .scan-line { position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--scan), transparent); box-shadow: 0 0 14px 3px var(--scan); animation: scanSweep 2.1s ease-in-out infinite; }
+  @keyframes scanSweep { 0% { top: 0%; opacity: 0; } 8% { opacity: 1; } 92% { opacity: 1; } 100% { top: 96%; opacity: 0; } }
+  .scan-label { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(0deg, rgba(0,0,0,.75), transparent); color: var(--scan); font-family: 'JetBrains Mono', monospace; font-size: 11.5px; letter-spacing: .04em; padding: 22px 14px 12px; text-align: center; }
+  .pulse-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--scan); margin-right: 7px; animation: pulseDot 1.2s ease-in-out infinite; vertical-align: middle; }
+  @keyframes pulseDot { 0%, 100% { opacity: .35; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1); } }
+  .scan-timer { color: var(--text); font-weight: 600; }
+
+  .results { display: none; flex-direction: column; gap: 16px; }
+  .results.visible { display: flex; }
+  .total-readout { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 26px 20px; text-align: center; }
+  .total-value { font-family: 'JetBrains Mono', monospace; font-size: 52px; font-weight: 700; color: var(--accent); line-height: 1; }
+  .total-unit { display: block; color: var(--text-dim); font-size: 13px; margin-top: 6px; letter-spacing: .03em; }
+  .macro-mini-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border); }
+  .macro-mini { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .macro-mini span:first-child { font-family: 'JetBrains Mono', monospace; font-size: 14px; color: var(--text); }
+  .macro-mini-label { font-size: 10px; color: var(--text-dim); }
+
+  .confidence-tag { display: inline-block; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .05em; color: var(--text-dim); border: 1px solid var(--border); border-radius: 20px; padding: 5px 12px; margin: -4px auto 0; width: fit-content; }
+
+  .item-list { list-style: none; margin: 0; padding: 0; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .item-row { display: flex; flex-direction: column; gap: 7px; padding: 14px 16px; border-bottom: 1px solid var(--border); transition: background .2s; }
+  .item-row:last-child { border-bottom: none; }
+  .item-row.confirmed { background: rgba(94, 234, 212, 0.07); }
+  .item-top { display: flex; align-items: center; gap: 10px; }
+  .item-name-input { flex: 1; min-width: 0; background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 9px 10px; color: var(--text); font-family: 'Space Grotesk', sans-serif; font-size: 13.5px; }
+  .item-name-input:focus { outline: none; border-color: var(--accent-dim); }
+  .source-tag { display: inline-block; font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: .03em; color: var(--text-dim); }
+  .source-tag.taco { color: var(--scan); }
+  .btn-confirm { flex-shrink: 0; width: 34px; height: 34px; border-radius: 50%; background: var(--surface-2); border: 1px solid var(--border); color: var(--text-dim); font-size: 15px; display: flex; align-items: center; justify-content: center; padding: 0; }
+  .item-row.confirmed .btn-confirm { background: var(--scan); border-color: var(--scan); color: #0b1f1c; }
+  .item-numbers-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px 12px; }
+  .num-field { display: flex; align-items: center; gap: 5px; }
+  .item-num-input { width: 56px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 7px 8px; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 12.5px; }
+  .item-num-input.protein { color: var(--accent); }
+  .item-num-input:focus { outline: none; border-color: var(--accent-dim); }
+  .item-num-input::-webkit-outer-spin-button, .item-num-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .unit { color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 10.5px; }
+
+  .observation { color: var(--text-dim); font-size: 12.5px; line-height: 1.5; margin: -6px 4px 0; }
+
+  button, select { font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 14px; border-radius: 10px; border: none; padding: 13px 18px; cursor: pointer; transition: opacity .15s; }
+  button:hover { opacity: .88; }
+  button:disabled { cursor: default; opacity: .7; }
+  .btn-primary { background: var(--accent); color: #241203; width: 100%; }
+  .btn-primary.registered { background: var(--scan); color: #0b1f1c; }
+  .btn-secondary { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); width: 100%; }
+
+  .error-box { display: none; background: var(--surface); border: 1px solid var(--danger); border-radius: var(--radius); padding: 18px; text-align: center; gap: 12px; flex-direction: column; }
+  .error-box.visible { display: flex; }
+  .error-box p { margin: 0; font-size: 13.5px; color: var(--text); }
+  .btn-retry { background: var(--danger); color: #fff; }
+
+  .food-table-toggle-row { text-align: center; margin: 22px 0 4px; }
+  .btn-link { background: none; border: none; color: var(--scan); font-family: 'JetBrains Mono', monospace; font-size: 11.5px; letter-spacing: .03em; padding: 6px; font-weight: 500; }
+  .btn-link:hover { opacity: .8; }
+  .food-table-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 4px; margin-top: 12px; }
+  .food-table-list { list-style: none; margin: 0; padding: 0; }
+  .food-table-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 11px 12px; border-bottom: 1px solid var(--border); }
+  .food-table-row:last-child { border-bottom: none; }
+  .food-table-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .food-table-name { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .food-table-meta { font-size: 11px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+  .food-table-empty { color: var(--text-dim); font-size: 12.5px; text-align: center; padding: 16px; margin: 0; }
+
+  .disclaimer { color: var(--text-dim); font-size: 11.5px; line-height: 1.6; text-align: center; margin-top: 26px; font-family: 'JetBrains Mono', monospace; opacity: .75; }
+
+  /* --- Aba Minha Dieta --- */
+  .section-title { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .12em; color: var(--text-dim); text-transform: uppercase; margin: 0 0 12px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 20px; }
+  .calc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; margin-bottom: 14px; }
+  .calc-field { display: flex; flex-direction: column; gap: 5px; }
+  .calc-field.full { grid-column: 1 / -1; }
+  .calc-field label { font-size: 11px; color: var(--text-dim); }
+  .calc-field input, .calc-field select { width: 100%; background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 9px 10px; color: var(--text); font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 400; }
+  .calc-field input:focus, .calc-field select:focus { outline: none; border-color: var(--accent-dim); }
+  .calc-results { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+  .calc-result { display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; }
+  .calc-result-value { font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 700; color: var(--accent); }
+  .calc-result-label { font-size: 10px; color: var(--text-dim); }
+
+  .stats-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; text-align: center; }
+  .stat-value { display: block; font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 700; color: var(--accent); }
+  .stat-label { font-size: 10.5px; color: var(--text-dim); margin-top: 3px; display: block; }
+
+  .chart-wrap { position: relative; height: 200px; margin-top: 4px; }
+  .chart-empty { color: var(--text-dim); font-size: 12.5px; text-align: center; padding: 30px 10px; margin: 0; }
+  .chart-ref-note { font-size: 10.5px; color: var(--text-dim); text-align: center; margin: 10px 0 0; }
 
   .history-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 4px; margin-bottom: 20px; }
   .history-list { list-style: none; margin: 0; padding: 0; }
@@ -67,76 +167,6 @@
   .btn-remove { background: none; border: none; color: var(--text-dim); font-size: 17px; line-height: 1; padding: 2px 6px; flex-shrink: 0; }
   .btn-remove:hover { color: var(--danger); }
 
-  .scanner-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 20px; }
-
-  .upload-zone { padding: 48px 20px; display: flex; flex-direction: column; align-items: center; gap: 14px; border: 1.5px dashed var(--border); margin: 12px; border-radius: 10px; cursor: pointer; transition: border-color .2s, background .2s; text-align: center; }
-  .upload-zone:hover { border-color: var(--accent-dim); background: var(--surface-2); }
-  .upload-zone svg { width: 34px; height: 34px; stroke: var(--accent); }
-  .upload-zone span { color: var(--text-dim); font-size: 13.5px; max-width: 240px; }
-
-  .preview-wrap { position: relative; line-height: 0; }
-  .preview-wrap img { width: 100%; display: block; filter: saturate(0.9) brightness(0.85); }
-  .scan-line { position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--scan), transparent); box-shadow: 0 0 14px 3px var(--scan); animation: scanSweep 2.1s ease-in-out infinite; }
-  @keyframes scanSweep { 0% { top: 0%; opacity: 0; } 8% { opacity: 1; } 92% { opacity: 1; } 100% { top: 96%; opacity: 0; } }
-  .scan-label { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(0deg, rgba(0,0,0,.75), transparent); color: var(--scan); font-family: 'JetBrains Mono', monospace; font-size: 11.5px; letter-spacing: .04em; padding: 22px 14px 12px; text-align: center; }
-
-  .results { display: none; flex-direction: column; gap: 16px; }
-  .results.visible { display: flex; }
-  .total-readout { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 26px 20px; text-align: center; }
-  .total-value { font-family: 'JetBrains Mono', monospace; font-size: 52px; font-weight: 700; color: var(--accent); line-height: 1; }
-  .total-unit { display: block; color: var(--text-dim); font-size: 13px; margin-top: 6px; letter-spacing: .03em; }
-  .macro-mini-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border); }
-  .macro-mini { display: flex; flex-direction: column; align-items: center; gap: 2px; }
-  .macro-mini span:first-child { font-family: 'JetBrains Mono', monospace; font-size: 14px; color: var(--text); }
-  .macro-mini-label { font-size: 10px; color: var(--text-dim); }
-
-  .confidence-tag { display: inline-block; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .05em; color: var(--text-dim); border: 1px solid var(--border); border-radius: 20px; padding: 5px 12px; margin: -4px auto 0; width: fit-content; }
-
-  .item-list { list-style: none; margin: 0; padding: 0; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
-  .item-row { display: flex; flex-direction: column; gap: 9px; padding: 14px 16px; border-bottom: 1px solid var(--border); transition: background .2s; }
-  .item-row:last-child { border-bottom: none; }
-  .item-row.confirmed { background: rgba(94, 234, 212, 0.07); }
-  .item-top { display: flex; align-items: center; gap: 10px; }
-  .item-name-input { flex: 1; min-width: 0; background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 9px 10px; color: var(--text); font-family: 'Space Grotesk', sans-serif; font-size: 13.5px; }
-  .item-name-input:focus { outline: none; border-color: var(--accent-dim); }
-  .btn-confirm { flex-shrink: 0; width: 34px; height: 34px; border-radius: 50%; background: var(--surface-2); border: 1px solid var(--border); color: var(--text-dim); font-size: 15px; display: flex; align-items: center; justify-content: center; padding: 0; }
-  .item-row.confirmed .btn-confirm { background: var(--scan); border-color: var(--scan); color: #0b1f1c; }
-  .item-numbers-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px 12px; }
-  .num-field { display: flex; align-items: center; gap: 5px; }
-  .item-num-input { width: 56px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 7px 8px; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 12.5px; }
-  .item-num-input.protein { color: var(--accent); }
-  .item-num-input:focus { outline: none; border-color: var(--accent-dim); }
-  .item-num-input::-webkit-outer-spin-button, .item-num-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-  .unit { color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 10.5px; }
-
-  .observation { color: var(--text-dim); font-size: 12.5px; line-height: 1.5; margin: -6px 4px 0; }
-
-  button { font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 14px; border-radius: 10px; border: none; padding: 13px 18px; cursor: pointer; transition: opacity .15s; }
-  button:hover { opacity: .88; }
-  button:disabled { cursor: default; opacity: .7; }
-  .btn-primary { background: var(--accent); color: #241203; width: 100%; }
-  .btn-primary.registered { background: var(--scan); color: #0b1f1c; }
-  .btn-secondary { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); width: 100%; }
-
-  .error-box { display: none; background: var(--surface); border: 1px solid var(--danger); border-radius: var(--radius); padding: 18px; text-align: center; gap: 12px; flex-direction: column; }
-  .error-box.visible { display: flex; }
-  .error-box p { margin: 0; font-size: 13.5px; color: var(--text); }
-  .btn-retry { background: var(--danger); color: #fff; }
-
-  .food-table-toggle-row { text-align: center; margin: 22px 0 4px; }
-  .btn-link { background: none; border: none; color: var(--scan); font-family: 'JetBrains Mono', monospace; font-size: 11.5px; letter-spacing: .03em; padding: 6px; }
-  .btn-link:hover { opacity: .8; }
-  .food-table-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 4px; margin-top: 12px; }
-  .food-table-list { list-style: none; margin: 0; padding: 0; }
-  .food-table-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 11px 12px; border-bottom: 1px solid var(--border); }
-  .food-table-row:last-child { border-bottom: none; }
-  .food-table-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-  .food-table-name { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .food-table-meta { font-size: 11px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
-  .food-table-empty { color: var(--text-dim); font-size: 12.5px; text-align: center; padding: 16px; margin: 0; }
-
-  .disclaimer { color: var(--text-dim); font-size: 11.5px; line-height: 1.6; text-align: center; margin-top: 26px; font-family: 'JetBrains Mono', monospace; opacity: .75; }
-
   input[type="file"] { display: none; }
 </style>
 </head>
@@ -145,74 +175,130 @@
   <header>
     <span class="eyebrow">Analisador de Proteína</span>
     <h1>Aponte. Capture. Meça.</h1>
-    <p class="sub">Fotografe o prato, confira os macros e registre o que você realmente comeu.</p>
+    <p class="sub">Fotografe o prato, confira os macros e acompanhe sua dieta ao longo do tempo.</p>
   </header>
 
-  <div class="install-row" id="installRow" hidden>
-    <button type="button" class="btn-install" id="installBtn">Instalar app</button>
+  <div class="tab-bar">
+    <button type="button" class="tab-btn active" id="tabBtnScanner" data-tab="scanner">Scanner</button>
+    <button type="button" class="tab-btn" id="tabBtnDieta" data-tab="dieta">Minha Dieta</button>
   </div>
-  <p class="ios-hint" id="iosHint" hidden>No iPhone: toque em <strong>Compartilhar</strong> e depois em <strong>Adicionar à Tela de Início</strong> para instalar como app.</p>
 
-  <div class="today-card">
-    <div class="today-header">
-      <span class="today-label">CONSUMO DE HOJE</span>
-      <button type="button" class="btn-link" id="historyToggle">Histórico</button>
+  <!-- ===== ABA SCANNER ===== -->
+  <div class="tab-panel" id="tabScanner">
+    <div class="install-row" id="installRow" hidden>
+      <button type="button" class="btn-install" id="installBtn">Instalar app</button>
     </div>
-    <div class="today-stats">
-      <div class="today-stat"><span class="today-stat-value" id="todayProtein">0 g</span><span class="today-stat-label">proteína</span></div>
-      <div class="today-stat"><span class="today-stat-value" id="todayCarb">0 g</span><span class="today-stat-label">carbo</span></div>
-      <div class="today-stat"><span class="today-stat-value" id="todayFat">0 g</span><span class="today-stat-label">gordura</span></div>
-      <div class="today-stat"><span class="today-stat-value" id="todayKcal">0 kcal</span><span class="today-stat-label">calorias</span></div>
+    <p class="ios-hint" id="iosHint" hidden>No iPhone: toque em <strong>Compartilhar</strong> e depois em <strong>Adicionar à Tela de Início</strong> para instalar como app.</p>
+
+    <div class="today-mini">
+      <span class="today-mini-text">Hoje: <strong id="miniProt">0g</strong> proteína · <strong id="miniKcal">0</strong> kcal</span>
+      <button type="button" class="btn-link" id="miniDietaLink">ver dieta →</button>
     </div>
-    <p class="today-meals-count"><span id="todayMealsCount">0</span> refeição(ões) registrada(s) hoje</p>
-  </div>
-  <div class="history-panel" id="historyPanel" hidden>
-    <ul class="history-list" id="historyList"></ul>
-    <p class="history-empty" id="historyEmpty">Nenhuma refeição registrada ainda.</p>
+
+    <div class="scanner-card" id="scannerCard">
+      <label class="upload-zone" id="uploadZone">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+          <circle cx="12" cy="13" r="4"/>
+        </svg>
+        <span>Toque para fotografar o prato ou escolher da galeria</span>
+        <input type="file" id="fileInput" accept="image/*" capture="environment">
+      </label>
+    </div>
+
+    <div class="results" id="results">
+      <div class="total-readout">
+        <span class="total-value" id="totalValue">0</span>
+        <span class="total-unit">gramas de proteína estimadas</span>
+        <div class="macro-mini-grid">
+          <div class="macro-mini"><span id="macroCarb">0 g</span><span class="macro-mini-label">carboidrato</span></div>
+          <div class="macro-mini"><span id="macroFat">0 g</span><span class="macro-mini-label">gordura</span></div>
+          <div class="macro-mini"><span id="macroKcal">0 kcal</span><span class="macro-mini-label">calorias</span></div>
+        </div>
+      </div>
+      <div class="confidence-tag" id="confidenceTag"></div>
+      <ul class="item-list" id="itemList"></ul>
+      <p class="observation" id="observationText"></p>
+      <button type="button" class="btn-primary" id="registerMealBtn">Registrar refeição de hoje</button>
+      <button type="button" class="btn-secondary" id="resetBtn">Analisar outra foto</button>
+    </div>
+
+    <div class="error-box" id="errorBox">
+      <p id="errorText"></p>
+      <button type="button" class="btn-retry" id="retryBtn">Tentar novamente</button>
+    </div>
+
+    <div class="food-table-toggle-row">
+      <button type="button" class="btn-link" id="foodTableToggle">Tabela de alimentos aprendidos (<span id="foodTableCount">0</span>)</button>
+    </div>
+    <div class="food-table-panel" id="foodTablePanel" hidden>
+      <ul class="food-table-list" id="foodTableList"></ul>
+      <p class="food-table-empty" id="foodTableEmpty">Nenhum alimento confirmado ainda. Confirme leituras nas análises para o app aprender com você.</p>
+    </div>
+
+    <p class="disclaimer">Estimativa gerada por IA e pela tabela TACO a partir da imagem. Pratos mistos, molhos, sobreposição de alimentos e porções fora do enquadramento reduzem a precisão — use como referência, não como medição exata.</p>
   </div>
 
-  <div class="scanner-card" id="scannerCard">
-    <label class="upload-zone" id="uploadZone">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-        <circle cx="12" cy="13" r="4"/>
-      </svg>
-      <span>Toque para fotografar o prato ou escolher da galeria</span>
-      <input type="file" id="fileInput" accept="image/*" capture="environment">
-    </label>
-  </div>
-
-  <div class="results" id="results">
-    <div class="total-readout">
-      <span class="total-value" id="totalValue">0</span>
-      <span class="total-unit">gramas de proteína estimadas</span>
-      <div class="macro-mini-grid">
-        <div class="macro-mini"><span id="macroCarb">0 g</span><span class="macro-mini-label">carboidrato</span></div>
-        <div class="macro-mini"><span id="macroFat">0 g</span><span class="macro-mini-label">gordura</span></div>
-        <div class="macro-mini"><span id="macroKcal">0 kcal</span><span class="macro-mini-label">calorias</span></div>
+  <!-- ===== ABA MINHA DIETA ===== -->
+  <div class="tab-panel" id="tabDieta" hidden>
+    <h2 class="section-title">Seu perfil</h2>
+    <div class="card">
+      <div class="calc-grid">
+        <div class="calc-field"><label>Peso (kg)</label><input type="number" id="perfilPeso" min="0" step="0.1"></div>
+        <div class="calc-field"><label>Altura (cm)</label><input type="number" id="perfilAltura" min="0" step="1"></div>
+        <div class="calc-field"><label>Idade</label><input type="number" id="perfilIdade" min="0" step="1"></div>
+        <div class="calc-field">
+          <label>Sexo (fórmula TMB)</label>
+          <select id="perfilSexo">
+            <option value="m">Masculino</option>
+            <option value="f">Feminino</option>
+          </select>
+        </div>
+        <div class="calc-field full">
+          <label>Nível de atividade</label>
+          <select id="perfilAtividade">
+            <option value="1.2">Sedentário (pouco ou nenhum exercício)</option>
+            <option value="1.375">Leve (exercício 1-3x/semana)</option>
+            <option value="1.55">Moderado (exercício 3-5x/semana)</option>
+            <option value="1.725">Intenso (exercício 6-7x/semana)</option>
+            <option value="1.9">Muito intenso (exercício + trabalho físico)</option>
+          </select>
+        </div>
+      </div>
+      <button type="button" class="btn-primary" id="perfilSalvarBtn">Calcular e salvar</button>
+      <div class="calc-results" id="calcResults" hidden>
+        <div class="calc-result"><span class="calc-result-value" id="resultImc">0</span><span class="calc-result-label" id="resultImcCategoria">IMC</span></div>
+        <div class="calc-result"><span class="calc-result-value" id="resultTmb">0</span><span class="calc-result-label">TMB (kcal/dia, repouso)</span></div>
+        <div class="calc-result" style="grid-column: 1 / -1;"><span class="calc-result-value" id="resultTdee">0</span><span class="calc-result-label">gasto diário estimado (kcal) - usado como referência nos gráficos</span></div>
       </div>
     </div>
-    <div class="confidence-tag" id="confidenceTag"></div>
-    <ul class="item-list" id="itemList"></ul>
-    <p class="observation" id="observationText"></p>
-    <button type="button" class="btn-primary" id="registerMealBtn">Registrar refeição de hoje</button>
-    <button type="button" class="btn-secondary" id="resetBtn">Analisar outra foto</button>
-  </div>
 
-  <div class="error-box" id="errorBox">
-    <p id="errorText"></p>
-    <button type="button" class="btn-retry" id="retryBtn">Tentar novamente</button>
-  </div>
+    <h2 class="section-title">Resumo</h2>
+    <div class="stats-row">
+      <div class="stat-card"><span class="stat-value" id="statHojeKcal">0</span><span class="stat-label">kcal hoje</span></div>
+      <div class="stat-card"><span class="stat-value" id="statMediaMes">0</span><span class="stat-label">média kcal/dia (mês)</span></div>
+      <div class="stat-card"><span class="stat-value" id="statProtMes">0 g</span><span class="stat-label">proteína acumulada (mês)</span></div>
+      <div class="stat-card"><span class="stat-value" id="statDiasRegistrados">0</span><span class="stat-label">dias com refeição registrada</span></div>
+    </div>
 
-  <div class="food-table-toggle-row">
-    <button type="button" class="btn-link" id="foodTableToggle">Tabela de alimentos aprendidos (<span id="foodTableCount">0</span>)</button>
-  </div>
-  <div class="food-table-panel" id="foodTablePanel" hidden>
-    <ul class="food-table-list" id="foodTableList"></ul>
-    <p class="food-table-empty" id="foodTableEmpty">Nenhum alimento confirmado ainda. Confirme leituras nas análises para o app aprender com você.</p>
-  </div>
+    <h2 class="section-title">Calorias por dia (últimos 14 dias)</h2>
+    <div class="card">
+      <div class="chart-wrap"><canvas id="dailyChart"></canvas></div>
+      <p class="chart-ref-note" id="dailyChartNote">Preencha seu perfil acima pra ver a linha de referência (TDEE) no gráfico.</p>
+    </div>
 
-  <p class="disclaimer">Estimativa gerada por IA a partir da imagem. Pratos mistos, molhos, sobreposição de alimentos e porções fora do enquadramento reduzem a precisão — use como referência, não como medição exata.</p>
+    <h2 class="section-title">Calorias por mês (média diária)</h2>
+    <div class="card">
+      <div class="chart-wrap"><canvas id="monthlyChart"></canvas></div>
+      <p class="chart-empty" id="monthlyChartEmpty" hidden>Ainda não há dados de meses anteriores suficientes.</p>
+    </div>
+
+    <h2 class="section-title">Histórico completo</h2>
+    <div class="history-panel" id="historyPanel">
+      <ul class="history-list" id="historyList"></ul>
+      <p class="history-empty" id="historyEmpty">Nenhuma refeição registrada ainda.</p>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -225,7 +311,117 @@ Responda APENAS com um JSON válido, sem markdown, sem crases, sem texto antes o
 {"itens":[{"nome":"string em português","peso_g":number,"proteina_g":number,"carboidrato_g":number,"gordura_g":number}],"confianca":"alta|média|baixa","observacao":"string curta em português explicando o que pode afetar a precisão desta estimativa específica"}`;
 
 const STORAGE_KEY = 'proteina_food_table_v1';
-const DAILY_LOG_KEY = 'proteina_daily_log_v1';
+
+// Valores de referência por 100g baseados na TACO (Tabela Brasileira de Composição de
+// Alimentos, NEPA/UNICAMP) - a tabela que nutricionistas no Brasil usam como referência.
+// É um subconjunto curado com os alimentos mais comuns em pratos brasileiros, não a base
+// completa (1859 itens) - o que não estiver aqui cai de volta na estimativa da própria IA.
+const TACO_TABLE = [
+  { termos: ['arroz branco', 'arroz cozido', 'arroz'], proteina: 2.5, carboidrato: 28.1, gordura: 0.2 },
+  { termos: ['arroz integral'], proteina: 2.6, carboidrato: 25.8, gordura: 1.0 },
+  { termos: ['feijão carioca', 'feijão marrom'], proteina: 4.8, carboidrato: 13.6, gordura: 0.5 },
+  { termos: ['feijão preto'], proteina: 4.5, carboidrato: 14.0, gordura: 0.5 },
+  { termos: ['feijoada'], proteina: 9.0, carboidrato: 10.0, gordura: 15.0 },
+  { termos: ['lentilha'], proteina: 6.3, carboidrato: 16.3, gordura: 0.5 },
+  { termos: ['grão de bico', 'grao de bico'], proteina: 8.4, carboidrato: 27.4, gordura: 2.6 },
+  { termos: ['peito de frango grelhado', 'frango grelhado', 'filé de frango', 'file de frango'], proteina: 32.0, carboidrato: 0, gordura: 2.5 },
+  { termos: ['frango assado', 'coxa de frango', 'sobrecoxa'], proteina: 27.0, carboidrato: 0, gordura: 12.0 },
+  { termos: ['frango frito', 'frango à milanesa', 'frango a milanesa'], proteina: 22.0, carboidrato: 12.0, gordura: 16.0 },
+  { termos: ['carne moída', 'carne moida'], proteina: 26.0, carboidrato: 0, gordura: 15.0 },
+  { termos: ['bife', 'patinho', 'contra filé', 'contra file', 'carne grelhada'], proteina: 35.0, carboidrato: 0, gordura: 4.0 },
+  { termos: ['picanha'], proteina: 28.0, carboidrato: 0, gordura: 18.0 },
+  { termos: ['acém', 'acem', 'carne cozida'], proteina: 26.0, carboidrato: 0, gordura: 15.0 },
+  { termos: ['bife à parmegiana', 'bife a parmegiana', 'parmegiana'], proteina: 20.0, carboidrato: 10.0, gordura: 18.0 },
+  { termos: ['bife à milanesa', 'bife a milanesa', 'milanesa'], proteina: 25.0, carboidrato: 12.0, gordura: 15.0 },
+  { termos: ['linguiça', 'linguica', 'calabresa'], proteina: 15.0, carboidrato: 2.0, gordura: 30.0 },
+  { termos: ['salsicha'], proteina: 13.0, carboidrato: 3.0, gordura: 25.0 },
+  { termos: ['bacon'], proteina: 37.0, carboidrato: 1.4, gordura: 42.0 },
+  { termos: ['costela'], proteina: 24.0, carboidrato: 0, gordura: 25.0 },
+  { termos: ['lombo suíno', 'lombo suino', 'lombo assado'], proteina: 29.0, carboidrato: 0, gordura: 8.0 },
+  { termos: ['ovo frito'], proteina: 13.6, carboidrato: 0.7, gordura: 15.7 },
+  { termos: ['ovo cozido', 'ovo'], proteina: 13.3, carboidrato: 0.6, gordura: 10.6 },
+  { termos: ['omelete'], proteina: 12.0, carboidrato: 1.5, gordura: 13.0 },
+  { termos: ['tilápia', 'tilapia', 'peixe grelhado'], proteina: 26.0, carboidrato: 0, gordura: 3.0 },
+  { termos: ['peixe frito'], proteina: 22.0, carboidrato: 8.0, gordura: 14.0 },
+  { termos: ['camarão', 'camarao'], proteina: 24.0, carboidrato: 0.5, gordura: 1.0 },
+  { termos: ['batata frita'], proteina: 3.9, carboidrato: 34.0, gordura: 14.0 },
+  { termos: ['batata cozida', 'batata'], proteina: 1.9, carboidrato: 18.6, gordura: 0.1 },
+  { termos: ['purê de batata', 'pure de batata'], proteina: 1.8, carboidrato: 15.0, gordura: 3.5 },
+  { termos: ['mandioca', 'aipim', 'macaxeira'], proteina: 0.6, carboidrato: 30.0, gordura: 0.3 },
+  { termos: ['farofa'], proteina: 2.1, carboidrato: 65.0, gordura: 15.0 },
+  { termos: ['polenta'], proteina: 2.0, carboidrato: 20.0, gordura: 1.5 },
+  { termos: ['macarrão', 'macarrao', 'massa'], proteina: 5.8, carboidrato: 30.9, gordura: 0.9 },
+  { termos: ['lasanha'], proteina: 10.0, carboidrato: 15.0, gordura: 10.0 },
+  { termos: ['nhoque'], proteina: 3.5, carboidrato: 25.0, gordura: 2.0 },
+  { termos: ['pão francês', 'pao frances'], proteina: 8.0, carboidrato: 58.0, gordura: 3.0 },
+  { termos: ['pão de forma', 'pao de forma'], proteina: 9.0, carboidrato: 49.0, gordura: 3.7 },
+  { termos: ['pão de queijo', 'pao de queijo'], proteina: 6.0, carboidrato: 35.0, gordura: 18.0 },
+  { termos: ['tapioca'], proteina: 0.3, carboidrato: 27.0, gordura: 0.1 },
+  { termos: ['milho cozido', 'milho'], proteina: 3.2, carboidrato: 19.0, gordura: 1.0 },
+  { termos: ['pipoca'], proteina: 8.0, carboidrato: 63.0, gordura: 5.0 },
+  { termos: ['alface'], proteina: 1.6, carboidrato: 2.4, gordura: 0.2 },
+  { termos: ['tomate'], proteina: 1.1, carboidrato: 3.1, gordura: 0.2 },
+  { termos: ['cenoura'], proteina: 1.3, carboidrato: 7.7, gordura: 0.2 },
+  { termos: ['brócolis', 'brocolis'], proteina: 3.6, carboidrato: 4.4, gordura: 0.5 },
+  { termos: ['couve'], proteina: 3.4, carboidrato: 5.0, gordura: 5.0 },
+  { termos: ['repolho'], proteina: 1.2, carboidrato: 5.7, gordura: 0.1 },
+  { termos: ['abóbora', 'abobora'], proteina: 1.0, carboidrato: 6.7, gordura: 0.1 },
+  { termos: ['vagem'], proteina: 1.8, carboidrato: 7.4, gordura: 0.1 },
+  { termos: ['quiabo'], proteina: 1.9, carboidrato: 4.6, gordura: 0.1 },
+  { termos: ['beterraba'], proteina: 1.3, carboidrato: 8.4, gordura: 0.1 },
+  { termos: ['pepino'], proteina: 0.7, carboidrato: 2.0, gordura: 0.1 },
+  { termos: ['salada de maionese', 'maionese', 'salpicão', 'salpicao'], proteina: 2.5, carboidrato: 12.0, gordura: 18.0 },
+  { termos: ['vinagrete'], proteina: 1.0, carboidrato: 5.0, gordura: 3.0 },
+  { termos: ['molho de tomate'], proteina: 1.5, carboidrato: 7.0, gordura: 1.5 },
+  { termos: ['queijo mussarela', 'mussarela', 'muçarela'], proteina: 22.0, carboidrato: 3.0, gordura: 25.0 },
+  { termos: ['queijo minas'], proteina: 17.4, carboidrato: 2.6, gordura: 20.0 },
+  { termos: ['queijo prato'], proteina: 24.0, carboidrato: 1.9, gordura: 29.0 },
+  { termos: ['requeijão', 'requeijao'], proteina: 9.0, carboidrato: 3.0, gordura: 25.0 },
+  { termos: ['iogurte'], proteina: 4.1, carboidrato: 3.7, gordura: 3.0 },
+  { termos: ['leite integral', 'leite'], proteina: 3.2, carboidrato: 4.5, gordura: 3.5 },
+  { termos: ['manteiga'], proteina: 0.4, carboidrato: 0.1, gordura: 82.0 },
+  { termos: ['banana'], proteina: 1.3, carboidrato: 26.0, gordura: 0.1 },
+  { termos: ['maçã', 'maca'], proteina: 0.3, carboidrato: 15.2, gordura: 0.2 },
+  { termos: ['laranja'], proteina: 1.0, carboidrato: 11.5, gordura: 0.1 },
+  { termos: ['mamão', 'mamao'], proteina: 0.5, carboidrato: 10.0, gordura: 0.1 },
+  { termos: ['melancia'], proteina: 0.9, carboidrato: 8.1, gordura: 0.1 },
+  { termos: ['abacaxi'], proteina: 0.9, carboidrato: 12.3, gordura: 0.1 },
+  { termos: ['manga'], proteina: 0.8, carboidrato: 15.0, gordura: 0.3 },
+  { termos: ['uva'], proteina: 0.7, carboidrato: 15.6, gordura: 0.2 },
+  { termos: ['abacate'], proteina: 1.2, carboidrato: 6.0, gordura: 8.4 },
+  { termos: ['coxinha'], proteina: 9.0, carboidrato: 25.0, gordura: 12.0 },
+  { termos: ['croquete'], proteina: 8.0, carboidrato: 20.0, gordura: 12.0 },
+  { termos: ['pastel'], proteina: 7.0, carboidrato: 30.0, gordura: 15.0 },
+  { termos: ['esfirra', 'esfiha'], proteina: 10.0, carboidrato: 28.0, gordura: 10.0 },
+  { termos: ['pizza'], proteina: 11.0, carboidrato: 33.0, gordura: 10.0 },
+  { termos: ['hambúrguer', 'hamburguer', 'hamburger'], proteina: 16.0, carboidrato: 3.0, gordura: 20.0 },
+  { termos: ['strogonoff'], proteina: 15.0, carboidrato: 6.0, gordura: 12.0 },
+  { termos: ['sushi', 'sashimi'], proteina: 8.0, carboidrato: 20.0, gordura: 2.0 },
+  { termos: ['pudim'], proteina: 5.0, carboidrato: 30.0, gordura: 6.0 },
+  { termos: ['chocolate'], proteina: 5.9, carboidrato: 55.0, gordura: 30.0 },
+  { termos: ['suco de laranja', 'suco'], proteina: 0.7, carboidrato: 10.0, gordura: 0.2 },
+  { termos: ['refrigerante'], proteina: 0, carboidrato: 10.4, gordura: 0 }
+];
+
+function normalizeText(s) {
+  return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+function matchTaco(nome) {
+  const norm = normalizeText(nome);
+  let best = null;
+  let bestLen = 0;
+  for (const entry of TACO_TABLE) {
+    for (const termo of entry.termos) {
+      const t = normalizeText(termo);
+      if (norm.includes(t) && t.length > bestLen) {
+        best = entry;
+        bestLen = t.length;
+      }
+    }
+  }
+  return best;
+}
 
 const fileInput = document.getElementById('fileInput');
 const uploadZone = document.getElementById('uploadZone');
@@ -242,8 +438,6 @@ const foodTablePanel = document.getElementById('foodTablePanel');
 const foodTableList = document.getElementById('foodTableList');
 const foodTableEmpty = document.getElementById('foodTableEmpty');
 const foodTableCountEl = document.getElementById('foodTableCount');
-const historyToggle = document.getElementById('historyToggle');
-const historyPanel = document.getElementById('historyPanel');
 const historyList = document.getElementById('historyList');
 const historyEmpty = document.getElementById('historyEmpty');
 
@@ -312,13 +506,33 @@ async function resizeImage(file, maxDim = 1024, quality = 0.85) {
   return canvas.toDataURL('image/jpeg', quality);
 }
 
+let scanTimerId = null;
+let scanStartTime = null;
+
 function showScanning(dataUrl) {
   scannerCard.innerHTML = `
     <div class="preview-wrap">
       <img src="${dataUrl}" alt="Prato fotografado">
       <div class="scan-line"></div>
-      <div class="scan-label">Analisando composição do prato...</div>
+      <div class="scan-label"><span class="pulse-dot"></span>Analisando composição do prato... <span class="scan-timer" id="scanTimer">0s</span></div>
     </div>`;
+  startScanTimer();
+}
+
+function startScanTimer() {
+  stopScanTimer();
+  scanStartTime = Date.now();
+  scanTimerId = setInterval(() => {
+    const el = document.getElementById('scanTimer');
+    if (el) el.textContent = Math.floor((Date.now() - scanStartTime) / 1000) + 's';
+  }, 1000);
+}
+
+function stopScanTimer() {
+  if (scanTimerId) {
+    clearInterval(scanTimerId);
+    scanTimerId = null;
+  }
 }
 
 function loadFoodTable() {
@@ -400,14 +614,32 @@ function extractJSON(text) {
 const confidenceLabels = { alta: 'Confiança alta', média: 'Confiança média', media: 'Confiança média', baixa: 'Confiança baixa' };
 
 function renderResults(parsed) {
-  currentItems = (parsed.itens || []).map(it => ({
-    nome: it.nome || '',
-    peso_g: Math.round(it.peso_g || 0),
-    proteina_g: Math.round(it.proteina_g || 0),
-    carboidrato_g: Math.round(it.carboidrato_g || 0),
-    gordura_g: Math.round(it.gordura_g || 0),
-    confirmado: false
-  }));
+  stopScanTimer();
+  currentItems = (parsed.itens || []).map(it => {
+    const peso_g = Math.round(it.peso_g || 0);
+    const taco = matchTaco(it.nome);
+    if (taco) {
+      const fator = peso_g / 100;
+      return {
+        nome: it.nome || '',
+        peso_g,
+        proteina_g: Math.round(taco.proteina * fator),
+        carboidrato_g: Math.round(taco.carboidrato * fator),
+        gordura_g: Math.round(taco.gordura * fator),
+        fonte: 'TACO',
+        confirmado: false
+      };
+    }
+    return {
+      nome: it.nome || '',
+      peso_g,
+      proteina_g: Math.round(it.proteina_g || 0),
+      carboidrato_g: Math.round(it.carboidrato_g || 0),
+      gordura_g: Math.round(it.gordura_g || 0),
+      fonte: 'IA',
+      confirmado: false
+    };
+  });
   document.getElementById('confidenceTag').textContent = confidenceLabels[parsed.confianca] || (parsed.confianca || '');
   document.getElementById('observationText').textContent = parsed.observacao || '';
   mealRegistered = false;
@@ -458,6 +690,10 @@ function renderItemList() {
 
     top.append(nameInput, confirmBtn);
 
+    const sourceTag = document.createElement('span');
+    sourceTag.className = 'source-tag' + (item.fonte === 'TACO' ? ' taco' : '');
+    sourceTag.textContent = item.fonte === 'TACO' ? 'Fonte: TACO' : 'Fonte: estimativa IA';
+
     const numbersGrid = document.createElement('div');
     numbersGrid.className = 'item-numbers-grid';
     numbersGrid.append(
@@ -467,7 +703,7 @@ function renderItemList() {
       makeNumberField(item, idx, 'gordura_g', 'g gord')
     );
 
-    li.append(top, numbersGrid);
+    li.append(top, sourceTag, numbersGrid);
     itemListEl.appendChild(li);
   });
 }
@@ -597,7 +833,19 @@ foodTableList.addEventListener('click', (e) => {
   renderFoodTablePanel();
 });
 
+function showError(message) {
+  stopScanTimer();
+  errorText.textContent = message;
+  errorBox.classList.add('visible');
+  const label = scannerCard.querySelector('.scan-label');
+  if (label) label.textContent = 'Falha na análise';
+  const scanLine = scannerCard.querySelector('.scan-line');
+  if (scanLine) scanLine.style.display = 'none';
+}
+
 // --- Registro diário de refeições ---
+const DAILY_LOG_KEY = 'proteina_daily_log_v1';
+
 function todayKey() {
   const d = new Date();
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
@@ -649,7 +897,7 @@ function registerMeal() {
   saveDailyLog(log);
   mealRegistered = true;
   updateRegisterButton();
-  renderTodaySummary();
+  renderTodayMini();
 }
 
 function updateRegisterButton() {
@@ -666,15 +914,12 @@ function updateRegisterButton() {
 
 registerMealBtn.addEventListener('click', registerMeal);
 
-function renderTodaySummary() {
+function renderTodayMini() {
   const log = loadDailyLog();
   const entry = log[todayKey()] || { refeicoes: [] };
   const totals = dayTotals(entry);
-  document.getElementById('todayProtein').textContent = Math.round(totals.proteina_g) + ' g';
-  document.getElementById('todayCarb').textContent = Math.round(totals.carboidrato_g) + ' g';
-  document.getElementById('todayFat').textContent = Math.round(totals.gordura_g) + ' g';
-  document.getElementById('todayKcal').textContent = Math.round(totals.calorias_kcal) + ' kcal';
-  document.getElementById('todayMealsCount').textContent = entry.refeicoes.length;
+  document.getElementById('miniProt').textContent = Math.round(totals.proteina_g) + 'g';
+  document.getElementById('miniKcal').textContent = Math.round(totals.calorias_kcal);
 }
 
 function formatDateLabel(key) {
@@ -738,11 +983,6 @@ function renderHistoryPanel() {
   });
 }
 
-historyToggle.addEventListener('click', () => {
-  historyPanel.hidden = !historyPanel.hidden;
-  if (!historyPanel.hidden) renderHistoryPanel();
-});
-
 historyList.addEventListener('click', (e) => {
   const btn = e.target.closest('.btn-remove');
   if (!btn) return;
@@ -758,16 +998,218 @@ historyList.addEventListener('click', (e) => {
   }
   saveDailyLog(log);
   renderHistoryPanel();
-  renderTodaySummary();
+  renderDashboard();
 });
 
-function showError(message) {
-  errorText.textContent = message;
-  errorBox.classList.add('visible');
-  const label = scannerCard.querySelector('.scan-label');
-  if (label) label.textContent = 'Falha na análise';
-  const scanLine = scannerCard.querySelector('.scan-line');
-  if (scanLine) scanLine.style.display = 'none';
+// --- Perfil: IMC e Metabolismo Basal (TMB / TDEE) ---
+const PERFIL_KEY = 'proteina_perfil_v1';
+
+function loadPerfil() {
+  try {
+    const raw = localStorage.getItem(PERFIL_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function savePerfil(perfil) {
+  try {
+    localStorage.setItem(PERFIL_KEY, JSON.stringify(perfil));
+  } catch (e) {
+    // ignora silenciosamente
+  }
+}
+
+function classificarIMC(imc) {
+  if (imc < 18.5) return 'Abaixo do peso';
+  if (imc < 25) return 'Peso normal';
+  if (imc < 30) return 'Sobrepeso';
+  if (imc < 35) return 'Obesidade grau I';
+  if (imc < 40) return 'Obesidade grau II';
+  return 'Obesidade grau III';
+}
+
+function calcularTMB(peso, altura, idade, sexo) {
+  const base = 10 * peso + 6.25 * altura - 5 * idade;
+  return sexo === 'm' ? base + 5 : base - 161;
+}
+
+function renderPerfilResultados(perfil) {
+  const calcResults = document.getElementById('calcResults');
+  if (!perfil) {
+    calcResults.hidden = true;
+    return;
+  }
+  document.getElementById('resultImc').textContent = perfil.imc.toFixed(1);
+  document.getElementById('resultImcCategoria').textContent = classificarIMC(perfil.imc);
+  document.getElementById('resultTmb').textContent = Math.round(perfil.tmb);
+  document.getElementById('resultTdee').textContent = Math.round(perfil.tdee);
+  calcResults.hidden = false;
+}
+
+function preencherCamposPerfil(perfil) {
+  if (!perfil) return;
+  document.getElementById('perfilPeso').value = perfil.peso;
+  document.getElementById('perfilAltura').value = perfil.altura;
+  document.getElementById('perfilIdade').value = perfil.idade;
+  document.getElementById('perfilSexo').value = perfil.sexo;
+  document.getElementById('perfilAtividade').value = perfil.atividade;
+}
+
+document.getElementById('perfilSalvarBtn').addEventListener('click', () => {
+  const peso = parseFloat(document.getElementById('perfilPeso').value);
+  const altura = parseFloat(document.getElementById('perfilAltura').value);
+  const idade = parseFloat(document.getElementById('perfilIdade').value);
+  const sexo = document.getElementById('perfilSexo').value;
+  const atividade = parseFloat(document.getElementById('perfilAtividade').value);
+  if (!peso || !altura || !idade) return;
+  const alturaM = altura / 100;
+  const imc = peso / (alturaM * alturaM);
+  const tmb = calcularTMB(peso, altura, idade, sexo);
+  const tdee = tmb * atividade;
+  const perfil = { peso, altura, idade, sexo, atividade, imc, tmb, tdee };
+  savePerfil(perfil);
+  renderPerfilResultados(perfil);
+  renderDashboard();
+});
+
+// --- Dashboard: estatísticas e gráficos ---
+let dailyChartInstance = null;
+let monthlyChartInstance = null;
+
+function computeStats() {
+  const log = loadDailyLog();
+  const keys = Object.keys(log);
+  const today = todayKey();
+  const todayTotals = log[today] ? dayTotals(log[today]) : { proteina_g: 0, carboidrato_g: 0, gordura_g: 0, calorias_kcal: 0 };
+  const monthPrefix = today.slice(0, 7);
+  let monthKcal = 0, monthProt = 0, monthDias = 0;
+  keys.forEach((k) => {
+    if (k.startsWith(monthPrefix)) {
+      const t = dayTotals(log[k]);
+      monthKcal += t.calorias_kcal;
+      monthProt += t.proteina_g;
+      monthDias += 1;
+    }
+  });
+  return {
+    hojeKcal: Math.round(todayTotals.calorias_kcal),
+    mediaMes: monthDias > 0 ? Math.round(monthKcal / monthDias) : 0,
+    protMes: Math.round(monthProt),
+    diasRegistrados: keys.length
+  };
+}
+
+function renderStats() {
+  const s = computeStats();
+  document.getElementById('statHojeKcal').textContent = s.hojeKcal;
+  document.getElementById('statMediaMes').textContent = s.mediaMes;
+  document.getElementById('statProtMes').textContent = s.protMes + ' g';
+  document.getElementById('statDiasRegistrados').textContent = s.diasRegistrados;
+}
+
+function buildDailyChartData(days) {
+  const log = loadDailyLog();
+  const labels = [];
+  const data = [];
+  const now = new Date();
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    labels.push(String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0'));
+    data.push(log[key] ? Math.round(dayTotals(log[key]).calorias_kcal) : 0);
+  }
+  return { labels, data };
+}
+
+function buildMonthlyChartData() {
+  const log = loadDailyLog();
+  const months = {};
+  Object.keys(log).sort().forEach((key) => {
+    const monthKey = key.slice(0, 7);
+    if (!months[monthKey]) months[monthKey] = { total: 0, dias: 0 };
+    months[monthKey].total += dayTotals(log[key]).calorias_kcal;
+    months[monthKey].dias += 1;
+  });
+  const labels = [];
+  const data = [];
+  Object.keys(months).sort().forEach((mk) => {
+    const parts = mk.split('-');
+    labels.push(parts[1] + '/' + parts[0].slice(2));
+    data.push(Math.round(months[mk].total / months[mk].dias));
+  });
+  return { labels, data };
+}
+
+function renderCharts() {
+  if (typeof Chart === 'undefined') return;
+  const perfil = loadPerfil();
+  const referencia = perfil ? Math.round(perfil.tdee) : null;
+  document.getElementById('dailyChartNote').hidden = !!referencia;
+
+  const daily = buildDailyChartData(14);
+  const dailyDatasets = [{ label: 'Calorias consumidas', data: daily.data, backgroundColor: '#f2a65a', borderRadius: 4, order: 2 }];
+  if (referencia) {
+    dailyDatasets.push({ label: 'Meta estimada (TDEE)', data: daily.labels.map(() => referencia), type: 'line', borderColor: '#5eead4', borderWidth: 2, pointRadius: 0, fill: false, order: 1 });
+  }
+  if (dailyChartInstance) dailyChartInstance.destroy();
+  dailyChartInstance = new Chart(document.getElementById('dailyChart').getContext('2d'), {
+    type: 'bar',
+    data: { labels: daily.labels, datasets: dailyDatasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: '#8d949b', font: { family: 'JetBrains Mono', size: 9 }, boxWidth: 10 } } },
+      scales: {
+        x: { ticks: { color: '#8d949b', font: { size: 9 } }, grid: { display: false } },
+        y: { ticks: { color: '#8d949b', font: { size: 9 } }, grid: { color: '#2b3237' } }
+      }
+    }
+  });
+
+  const monthly = buildMonthlyChartData();
+  document.getElementById('monthlyChartEmpty').hidden = monthly.labels.length > 0;
+  document.getElementById('monthlyChart').style.display = monthly.labels.length > 0 ? 'block' : 'none';
+  if (monthly.labels.length > 0) {
+    const monthlyDatasets = [{ label: 'Média kcal/dia', data: monthly.data, backgroundColor: '#f2a65a', borderRadius: 4, order: 2 }];
+    if (referencia) {
+      monthlyDatasets.push({ label: 'Meta estimada (TDEE)', data: monthly.labels.map(() => referencia), type: 'line', borderColor: '#5eead4', borderWidth: 2, pointRadius: 0, fill: false, order: 1 });
+    }
+    if (monthlyChartInstance) monthlyChartInstance.destroy();
+    monthlyChartInstance = new Chart(document.getElementById('monthlyChart').getContext('2d'), {
+      type: 'bar',
+      data: { labels: monthly.labels, datasets: monthlyDatasets },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: '#8d949b', font: { family: 'JetBrains Mono', size: 9 }, boxWidth: 10 } } },
+        scales: {
+          x: { ticks: { color: '#8d949b', font: { size: 9 } }, grid: { display: false } },
+          y: { ticks: { color: '#8d949b', font: { size: 9 } }, grid: { color: '#2b3237' } }
+        }
+      }
+    });
+  }
+}
+
+function renderDashboard() {
+  renderStats();
+  renderCharts();
+  renderHistoryPanel();
+  renderTodayMini();
+}
+
+// --- Abas ---
+document.querySelectorAll('.tab-btn').forEach((btn) => {
+  btn.addEventListener('click', () => activateTab(btn.dataset.tab));
+});
+document.getElementById('miniDietaLink').addEventListener('click', () => activateTab('dieta'));
+
+function activateTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach((b) => b.classList.toggle('active', b.dataset.tab === tab));
+  document.getElementById('tabScanner').hidden = tab !== 'scanner';
+  document.getElementById('tabDieta').hidden = tab !== 'dieta';
+  if (tab === 'dieta') renderDashboard();
 }
 
 // --- PWA: install prompt (Android/Chrome) + iOS hint + service worker ---
@@ -804,7 +1246,9 @@ if ('serviceWorker' in navigator) {
 }
 
 updateFoodTableCount();
-renderTodaySummary();
+renderTodayMini();
+preencherCamposPerfil(loadPerfil());
+renderPerfilResultados(loadPerfil());
 </script>
 </body>
 </html>
