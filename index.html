@@ -204,10 +204,36 @@
   .btn-remove:hover { color: var(--danger); }
 
   input[type="file"] { display: none; }
+
+  .goal-alert { position: fixed; top: max(16px, env(safe-area-inset-top)); left: 16px; right: 16px; max-width: 460px; margin: 0 auto; background: var(--surface); border: 2px solid var(--accent); border-radius: var(--radius); padding: 16px; z-index: 1000; animation: goalGlow 1.8s ease-in-out 3, goalSlideIn .3s ease-out; }
+  .goal-alert[hidden] { display: none; }
+  @keyframes goalGlow { 0%, 100% { box-shadow: 0 4px 20px rgba(255,107,69,0.18), var(--shadow); } 50% { box-shadow: 0 4px 30px rgba(255,107,69,0.5), var(--shadow); } }
+  @keyframes goalSlideIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .goal-alert-inner { display: flex; align-items: flex-start; gap: 10px; }
+  .goal-alert-icon { font-size: 24px; line-height: 1; }
+  .goal-alert-text { flex: 1; min-width: 0; }
+  .goal-alert-text strong { display: block; font-size: 14px; margin-bottom: 3px; }
+  .goal-alert-text p { margin: 0; font-size: 12px; color: var(--text-dim); }
+  .goal-alert-close { background: none; border: none; color: var(--text-dim); font-size: 20px; padding: 0 4px; flex-shrink: 0; }
+  .goal-alert-tips { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 7px; }
+  .goal-alert-tip { font-size: 12px; color: var(--text); margin: 0; display: flex; gap: 6px; align-items: flex-start; }
+  .goal-alert-tip::before { content: '•'; color: var(--accent); flex-shrink: 0; }
 </style>
 </head>
 <body>
 <div class="app">
+  <div class="goal-alert" id="goalAlert" hidden>
+    <div class="goal-alert-inner">
+      <span class="goal-alert-icon">🎯</span>
+      <div class="goal-alert-text">
+        <strong id="goalAlertTitle">Meta calórica de hoje atingida</strong>
+        <p id="goalAlertSubtitle"></p>
+      </div>
+      <button type="button" class="goal-alert-close" id="goalAlertClose">×</button>
+    </div>
+    <div class="goal-alert-tips" id="goalAlertTips"></div>
+  </div>
+
   <header>
     <span class="eyebrow">Analisador de Proteína</span>
     <h1>Aponte. Capture. Meça.</h1>
@@ -1085,11 +1111,112 @@ function dayTotals(dayEntry) {
   }, { proteina_g: 0, carboidrato_g: 0, gordura_g: 0, calorias_kcal: 0 });
 }
 
+// --- Alerta sonoro e visual de meta calórica ---
+const NUTRITION_TIPS = [
+  'Prefira água, chá sem açúcar ou café puro pelo resto do dia.',
+  'Se for comer mais alguma coisa, priorize proteína magra e vegetais — eles saciam com menos calorias.',
+  'Evite frituras, doces e bebidas açucaradas nas próximas refeições.',
+  'Não pule a próxima refeição — isso costuma levar a comer demais depois. Ajuste a porção, não a quantidade de refeições.',
+  'Uma caminhada leve depois das refeições ajuda a digestão, sem precisar ser intensa.',
+  'Coma devagar e preste atenção aos sinais de saciedade antes de repetir o prato.'
+];
+
+function pickTips(n) {
+  const shuffled = [...NUTRITION_TIPS].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, n);
+}
+
+function playAlertSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const playTone = (freq, startTime, duration) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.0001, ctx.currentTime + startTime);
+      gain.gain.exponentialRampToValueAtTime(0.18, ctx.currentTime + startTime + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + startTime + duration);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(ctx.currentTime + startTime);
+      osc.stop(ctx.currentTime + startTime + duration + 0.05);
+    };
+    playTone(880, 0, 0.15);
+    playTone(660, 0.15, 0.28);
+  } catch (e) {
+    // Web Audio indisponível (navegador sem suporte, ou bloqueio de autoplay) - ignora
+  }
+}
+
+const ALERT_STATE_KEY = 'proteina_alert_state_v1';
+
+function loadAlertState() {
+  try {
+    const raw = localStorage.getItem(ALERT_STATE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch (e) {
+    return {};
+  }
+}
+
+function saveAlertState(state) {
+  try {
+    localStorage.setItem(ALERT_STATE_KEY, JSON.stringify(state));
+  } catch (e) {
+    // ignora silenciosamente
+  }
+}
+
+const goalAlertEl = document.getElementById('goalAlert');
+const goalAlertTitle = document.getElementById('goalAlertTitle');
+const goalAlertSubtitle = document.getElementById('goalAlertSubtitle');
+const goalAlertTips = document.getElementById('goalAlertTips');
+const goalAlertClose = document.getElementById('goalAlertClose');
+
+goalAlertClose.addEventListener('click', () => { goalAlertEl.hidden = true; });
+
+function showGoalAlert(newKcal, tdee) {
+  const diff = Math.round(newKcal - tdee);
+  goalAlertTitle.textContent = diff > 0 ? 'Meta calórica de hoje ultrapassada' : 'Meta calórica de hoje atingida';
+  goalAlertSubtitle.textContent = diff > 0
+    ? 'Você passou ' + diff + ' kcal da sua meta de ' + Math.round(tdee) + ' kcal hoje.'
+    : 'Você chegou na sua meta de ' + Math.round(tdee) + ' kcal por hoje.';
+  goalAlertTips.innerHTML = '';
+  pickTips(3).forEach((tip) => {
+    const p = document.createElement('p');
+    p.className = 'goal-alert-tip';
+    p.textContent = tip;
+    goalAlertTips.appendChild(p);
+  });
+  goalAlertEl.hidden = false;
+  playAlertSound();
+  if (navigator.vibrate) navigator.vibrate([120, 60, 120]);
+}
+
+function checkGoalAlert(previousKcal, newKcal) {
+  const perfil = loadPerfil();
+  if (!perfil || !perfil.tdee) return;
+  const today = todayKey();
+  const state = loadAlertState();
+  if (state.date !== today) {
+    Object.keys(state).forEach((k) => delete state[k]);
+    state.date = today;
+  }
+  const tdee = perfil.tdee;
+  if (previousKcal < tdee && newKcal >= tdee && !state.metaAlertada) {
+    state.metaAlertada = true;
+    saveAlertState(state);
+    showGoalAlert(newKcal, tdee);
+  }
+}
+
 function registerMeal() {
   if (mealRegistered || currentItems.length === 0) return;
   const totals = updateTotal();
   const log = loadDailyLog();
   const key = todayKey();
+  const previousKcal = log[key] ? dayTotals(log[key]).calorias_kcal : 0;
   if (!log[key]) log[key] = { refeicoes: [] };
   const now = new Date();
   log[key].refeicoes.push({
@@ -1105,6 +1232,7 @@ function registerMeal() {
   mealRegistered = true;
   updateRegisterButton();
   renderTodayMini();
+  checkGoalAlert(previousKcal, previousKcal + totals.calorias_kcal);
 }
 
 function updateRegisterButton() {
