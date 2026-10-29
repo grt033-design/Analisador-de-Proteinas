@@ -1,1 +1,20 @@
-
+{
+  "avisos": [
+    {
+      "id": "2026-10-28-novidades-motion",
+      "data": "2026-10-28",
+      "tipo": "novidade",
+      "titulo": "Seu dia agora aparece na hora",
+      "texto": "Ao registrar uma refeição, o app mostra quanto você já consumiu de calorias, proteína, carboidrato e gordura, comparado com a sua meta, e avisa se passou do limite.\n\nE quando a análise da foto termina, os talheres brindam. 🍽️",
+      "link": null
+    },
+    {
+      "id": "2026-10-28-dica-perfil",
+      "data": "2026-10-28",
+      "tipo": "dica",
+      "titulo": "Preencha seu perfil",
+      "texto": "Com peso, altura, idade e nível de atividade em Minha Dieta, o app calcula a sua meta diária e passa a avisar quando você está perto do limite.",
+      "link": null
+    }
+  ]
+}
