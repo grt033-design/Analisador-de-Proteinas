@@ -36,7 +36,36 @@
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: 'Space Grotesk', sans-serif; -webkit-font-smoothing: antialiased; }
   body { min-height: 100vh; display: flex; justify-content: center; padding: max(32px, env(safe-area-inset-top)) 16px calc(60px + env(safe-area-inset-bottom)); }
-  .app { width: 100%; max-width: 460px; }
+  [hidden] { display: none !important; }
+  .app { width: 100%; max-width: 460px; position: relative; }
+
+  /* --- Sino de avisos --- */
+  .notif-btn { position: absolute; top: -4px; right: 0; width: 42px; height: 42px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow); display: flex; align-items: center; justify-content: center; padding: 0; z-index: 950; color: var(--text); }
+  .notif-btn svg { width: 20px; height: 20px; }
+  .notif-btn.ring-bell svg { animation: bellShake 1s ease-in-out 2; transform-origin: 50% 4px; }
+  @keyframes bellShake { 0%,100% { transform: rotate(0); } 15% { transform: rotate(16deg); } 30% { transform: rotate(-14deg); } 45% { transform: rotate(10deg); } 60% { transform: rotate(-6deg); } 75% { transform: rotate(3deg); } }
+  .notif-badge { position: absolute; top: -3px; right: -3px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--danger); color: #fff; font-size: 10.5px; font-weight: 700; display: flex; align-items: center; justify-content: center; border: 2px solid var(--bg); animation: chipPop .4s cubic-bezier(.3,1.7,.5,1) both; }
+  .notif-panel { position: absolute; top: 46px; right: 0; width: min(340px, calc(100vw - 32px)); max-height: 70vh; overflow-y: auto; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: 0 14px 40px rgba(36,31,24,.18); z-index: 960; transform-origin: top right; animation: panelIn .25s cubic-bezier(.3,1.4,.5,1); }
+  @keyframes panelIn { from { opacity: 0; transform: scale(.92) translateY(-6px); } to { opacity: 1; transform: none; } }
+  .notif-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px 10px; border-bottom: 1px solid var(--border); }
+  .notif-head strong { font-size: 14px; }
+  .notif-head span { font-size: 11px; color: var(--text-dim); }
+  .notif-list { list-style: none; margin: 0; padding: 0; }
+  .notif-item { display: flex; gap: 10px; padding: 13px 16px; border-bottom: 1px solid var(--border); }
+  .notif-item:last-child { border-bottom: none; }
+  .notif-item.unread { background: rgba(255,107,69,.06); }
+  .notif-icon { font-size: 20px; line-height: 1.2; flex-shrink: 0; }
+  .notif-body { min-width: 0; }
+  .notif-meta { display: flex; gap: 6px; align-items: center; font-size: 10.5px; color: var(--text-dim); margin-bottom: 3px; font-family: 'JetBrains Mono', monospace; }
+  .notif-tag { font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
+  .notif-tag.novidade { color: var(--fat); }
+  .notif-tag.aviso { color: var(--accent); }
+  .notif-tag.dica { color: var(--scan); }
+  .notif-title { font-size: 13.5px; font-weight: 700; margin: 0 0 3px; }
+  .notif-text { font-size: 12.5px; color: var(--text); margin: 0; line-height: 1.45; white-space: pre-line; }
+  .notif-link { display: inline-block; margin-top: 6px; font-size: 12px; font-weight: 700; color: var(--accent); text-decoration: none; }
+  .notif-empty { padding: 26px 16px; text-align: center; color: var(--text-dim); font-size: 12.5px; margin: 0; }
+  header { padding: 0 46px; }
   header { text-align: center; margin-bottom: 18px; }
   .eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.16em; color: var(--accent); text-transform: uppercase; font-weight: 700; }
   h1 { font-size: 28px; font-weight: 700; margin: 10px 0 8px; letter-spacing: -0.01em; }
@@ -382,6 +411,16 @@
       <button type="button" class="goal-alert-close" id="goalAlertClose">×</button>
     </div>
     <div class="goal-alert-tips" id="goalAlertTips"></div>
+  </div>
+
+  <button type="button" class="notif-btn" id="notifBtn" aria-label="Avisos e novidades" aria-expanded="false">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+    <span class="notif-badge" id="notifBadge" hidden>0</span>
+  </button>
+  <div class="notif-panel" id="notifPanel" hidden role="dialog" aria-label="Avisos e novidades">
+    <div class="notif-head"><strong>Avisos e novidades</strong><span id="notifCount"></span></div>
+    <ul class="notif-list" id="notifList"></ul>
+    <p class="notif-empty" id="notifEmpty" hidden>Nenhum aviso por enquanto.</p>
   </div>
 
   <header>
@@ -755,8 +794,10 @@ retryBtn.addEventListener('click', async () => {
   }
 });
 
-resetBtn.addEventListener('click', () => {
+function resetScanner() {
+  stopScanTimer();
   resultsEl.classList.remove('visible');
+  errorBox.classList.remove('visible');
   scannerCard.innerHTML = '';
   scannerCard.appendChild(uploadZone);
   scannerCard.appendChild(voiceRow);
@@ -764,8 +805,12 @@ resetBtn.addEventListener('click', () => {
   lastDataUrl = null;
   lastRetryFn = null;
   currentItems = [];
+  itemListEl.innerHTML = '';
   mealRegistered = false;
-});
+  updateRegisterButton();
+}
+
+resetBtn.addEventListener('click', resetScanner);
 
 async function resizeImage(file, maxDim = 1024, quality = 0.85) {
   let bitmap;
@@ -1498,6 +1543,10 @@ function closeDaySheet() {
   daySheet.classList.remove('open');
   daySheetBackdrop.classList.remove('open');
   setTimeout(() => { daySheet.hidden = true; daySheetBackdrop.hidden = true; }, 380);
+  // Refeição já registrada: limpa a captura e deixa o scanner pronto para a próxima
+  resetScanner();
+  renderTodayMini();
+  window.scrollTo({ top: 0, behavior: reduceMotionPref() ? 'auto' : 'smooth' });
   if (daySheetAction) { const a = daySheetAction; daySheetAction = null; a(); }
 }
 daySheetCloseBtn.addEventListener('click', closeDaySheet);
@@ -2116,6 +2165,130 @@ function activateTab(tab) {
   if (tab === 'dieta') renderDashboard();
 }
 
+// --- Avisos e novidades (publicados pelo administrador em avisos.json) ---
+const NOTICES_SEEN_KEY = 'proteina_avisos_vistos_v1';
+const notifBtn = document.getElementById('notifBtn');
+const notifBadge = document.getElementById('notifBadge');
+const notifPanel = document.getElementById('notifPanel');
+const notifList = document.getElementById('notifList');
+const notifEmpty = document.getElementById('notifEmpty');
+const notifCount = document.getElementById('notifCount');
+const NOTICE_ICONS = { novidade: '🎉', aviso: '📢', dica: '💡' };
+const NOTICE_LABELS = { novidade: 'Novidade', aviso: 'Aviso', dica: 'Dica' };
+let notices = [];
+
+function loadSeenNotices() {
+  try { return JSON.parse(localStorage.getItem(NOTICES_SEEN_KEY) || '[]'); } catch (e) { return []; }
+}
+function saveSeenNotices(ids) {
+  try { localStorage.setItem(NOTICES_SEEN_KEY, JSON.stringify(ids)); } catch (e) {}
+}
+
+function formatNoticeDate(iso) {
+  const parts = (iso || '').split('-');
+  return parts.length === 3 ? parts[2] + '/' + parts[1] + '/' + parts[0] : '';
+}
+
+async function loadNotices() {
+  try {
+    const res = await fetch('avisos.json?t=' + Date.now(), { cache: 'no-store' });
+    if (!res.ok) return;
+    const data = await res.json();
+    const hoje = todayKey();
+    notices = (data.avisos || [])
+      .filter((n) => n && n.id && n.titulo && (!n.ate || n.ate >= hoje) && (!n.data || n.data <= hoje))
+      .sort((a, b) => (b.data || '').localeCompare(a.data || ''));
+    updateNoticeBadge(true);
+    if (!notifPanel.hidden) renderNotices();
+  } catch (e) {
+    // sem conexão ou arquivo ausente: o sino só fica sem contador
+  }
+}
+
+function unreadNotices() {
+  const seen = loadSeenNotices();
+  return notices.filter((n) => !seen.includes(n.id));
+}
+
+function updateNoticeBadge(animate) {
+  const count = unreadNotices().length;
+  notifBadge.hidden = count === 0;
+  notifBadge.textContent = count > 9 ? '9+' : String(count);
+  if (count > 0 && animate && !reduceMotionPref()) {
+    notifBtn.classList.remove('ring-bell');
+    void notifBtn.offsetWidth;
+    notifBtn.classList.add('ring-bell');
+  }
+}
+
+function renderNotices() {
+  const seen = loadSeenNotices();
+  notifList.innerHTML = '';
+  notifEmpty.hidden = notices.length > 0;
+  notifCount.textContent = notices.length ? notices.length + (notices.length === 1 ? ' aviso' : ' avisos') : '';
+  notices.forEach((n) => {
+    const tipo = NOTICE_ICONS[n.tipo] ? n.tipo : 'aviso';
+    const li = document.createElement('li');
+    li.className = 'notif-item' + (seen.includes(n.id) ? '' : ' unread');
+    const icon = document.createElement('span');
+    icon.className = 'notif-icon';
+    icon.textContent = NOTICE_ICONS[tipo];
+    const body = document.createElement('div');
+    body.className = 'notif-body';
+    const meta = document.createElement('div');
+    meta.className = 'notif-meta';
+    const tag = document.createElement('span');
+    tag.className = 'notif-tag ' + tipo;
+    tag.textContent = NOTICE_LABELS[tipo];
+    const date = document.createElement('span');
+    date.textContent = formatNoticeDate(n.data);
+    meta.append(tag, date);
+    const title = document.createElement('p');
+    title.className = 'notif-title';
+    title.textContent = n.titulo;
+    const text = document.createElement('p');
+    text.className = 'notif-text';
+    text.textContent = n.texto || '';
+    body.append(meta, title, text);
+    if (n.link && /^https:\/\//.test(n.link)) {
+      const a = document.createElement('a');
+      a.className = 'notif-link';
+      a.href = n.link;
+      a.target = '_blank';
+      a.rel = 'noopener';
+      a.textContent = (n.textoLink || 'Saiba mais') + ' →';
+      body.appendChild(a);
+    }
+    li.append(icon, body);
+    notifList.appendChild(li);
+  });
+}
+
+function openNotices() {
+  renderNotices();
+  notifPanel.hidden = false;
+  notifBtn.setAttribute('aria-expanded', 'true');
+  // Ao abrir, tudo o que está na lista passa a contar como lido
+  saveSeenNotices(Array.from(new Set([...loadSeenNotices(), ...notices.map((n) => n.id)])));
+  updateNoticeBadge(false);
+}
+function closeNotices() {
+  notifPanel.hidden = true;
+  notifBtn.setAttribute('aria-expanded', 'false');
+  notifList.querySelectorAll('.notif-item.unread').forEach((li) => li.classList.remove('unread'));
+}
+
+notifBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  if (notifPanel.hidden) openNotices(); else closeNotices();
+});
+document.addEventListener('click', (e) => {
+  if (!notifPanel.hidden && !notifPanel.contains(e.target)) closeNotices();
+});
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !notifPanel.hidden) closeNotices(); });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') loadNotices(); });
+loadNotices();
+
 // --- PWA: install prompt (Android/Chrome) + iOS hint + service worker ---
 const installRow = document.getElementById('installRow');
 const installBtn = document.getElementById('installBtn');
@@ -2127,7 +2300,8 @@ const isStandalone = window.navigator.standalone === true || window.matchMedia('
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   deferredPrompt = e;
-  installRow.hidden = false;
+  // Só oferece instalar quando o navegador diz que dá e o app não está aberto como instalado
+  if (!isStandalone) installRow.hidden = false;
 });
 
 installBtn.addEventListener('click', async () => {
@@ -2138,10 +2312,21 @@ installBtn.addEventListener('click', async () => {
   installRow.hidden = true;
 });
 
-window.addEventListener('appinstalled', () => { installRow.hidden = true; });
+window.addEventListener('appinstalled', () => {
+  installRow.hidden = true;
+  iosHint.hidden = true;
+  try { localStorage.setItem('proteina_app_instalado', '1'); } catch (e) {}
+});
 
 const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
-if (isIOS && !isStandalone) iosHint.hidden = false;
+let jaInstalado = false;
+try { jaInstalado = localStorage.getItem('proteina_app_instalado') === '1'; } catch (e) {}
+if (isStandalone) {
+  installRow.hidden = true;
+  iosHint.hidden = true;
+} else if (isIOS && !jaInstalado) {
+  iosHint.hidden = false;
+}
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
