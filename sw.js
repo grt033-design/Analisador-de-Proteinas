@@ -1,4 +1,4 @@
-const CACHE_NAME = 'analisador-proteina-v13';
+const CACHE_NAME = 'analisador-proteina-v14';
 const APP_SHELL = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (event) => {
@@ -16,5 +16,7 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   // Só intercepta GET do próprio app shell - a chamada de análise (POST na função) sempre vai direto pra rede
   if (event.request.method !== 'GET' || event.request.url.includes('/.netlify/functions/')) return;
+  // Avisos do administrador sempre vêm da rede, nunca do cache
+  if (event.request.url.includes('avisos.json')) return;
   event.respondWith(caches.match(event.request).then((cached) => cached || fetch(event.request)));
 });
