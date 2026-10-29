@@ -248,6 +248,81 @@
 
   input[type="file"] { display: none; }
 
+  /* --- Painel "Resumo do dia" após registrar refeição --- */
+  .day-sheet-backdrop { position: fixed; inset: 0; background: rgba(36,31,24,0.45); z-index: 1100; opacity: 0; transition: opacity .3s ease; }
+  .day-sheet-backdrop.open { opacity: 1; }
+  .day-sheet { position: fixed; left: 0; right: 0; bottom: 0; max-width: 480px; margin: 0 auto; max-height: 92vh; overflow-y: auto; background: var(--bg); border-radius: 22px 22px 0 0; padding: 10px 18px calc(20px + env(safe-area-inset-bottom)); z-index: 1101; transform: translateY(105%); transition: transform .5s cubic-bezier(.2,1.25,.35,1); box-shadow: 0 -10px 40px rgba(36,31,24,.25); }
+  .day-sheet.open { transform: translateY(0); }
+  .day-sheet-grip { width: 42px; height: 5px; border-radius: 3px; background: var(--border); margin: 0 auto 14px; }
+  .day-sheet-head { text-align: center; margin-bottom: 14px; }
+  .day-sheet-head .eyebrow { display: block; }
+  .day-sheet-head h2 { margin: 6px 0 2px; font-size: 21px; }
+  .day-sheet-head p { margin: 0; color: var(--text-dim); font-size: 12.5px; }
+
+  .kcal-ring-box { display: flex; align-items: center; gap: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; box-shadow: var(--shadow); margin-bottom: 12px; }
+  .kcal-ring { position: relative; width: 112px; height: 112px; flex-shrink: 0; }
+  .kcal-ring svg { width: 112px; height: 112px; transform: rotate(-90deg); }
+  .kcal-ring .track { fill: none; stroke: var(--surface-2); stroke-width: 10; }
+  .kcal-ring .prev { fill: none; stroke: var(--accent); stroke-opacity: .35; stroke-width: 10; stroke-linecap: round; }
+  .kcal-ring .now { fill: none; stroke: var(--accent); stroke-width: 10; stroke-linecap: round; transition: stroke .4s ease; }
+  .kcal-ring.over .now { stroke: var(--danger); }
+  .kcal-ring.near .now { stroke: var(--carb); }
+  .kcal-ring-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .kcal-ring-center strong { font-family: 'JetBrains Mono', monospace; font-size: 22px; line-height: 1; }
+  .kcal-ring-center span { font-size: 10px; color: var(--text-dim); margin-top: 3px; }
+  .kcal-ring-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+  .kcal-ring-info .big { font-family: 'JetBrains Mono', monospace; font-size: 26px; font-weight: 700; line-height: 1; }
+  .kcal-ring-info .label { font-size: 12px; color: var(--text-dim); }
+  .delta-chip { display: inline-block; width: fit-content; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; color: var(--accent); background: rgba(255,107,69,.12); border-radius: 999px; padding: 3px 9px; opacity: 0; transform: scale(.6); }
+  .delta-chip.pop { animation: chipPop .45s cubic-bezier(.3,1.7,.5,1) forwards; }
+  @keyframes chipPop { to { opacity: 1; transform: scale(1); } }
+
+  .macro-rows { display: flex; flex-direction: column; gap: 14px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); margin-bottom: 12px; }
+  .macro-row-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+  .macro-row-name { font-weight: 700; font-size: 13px; }
+  .macro-row-val { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-dim); }
+  .macro-row-val strong { color: var(--text); font-size: 13px; }
+  .macro-bar { position: relative; height: 10px; border-radius: 5px; background: var(--surface-2); overflow: visible; }
+  .macro-bar .seg-prev, .macro-bar .seg-new { position: absolute; top: 0; bottom: 0; left: 0; border-radius: 5px; width: 0; }
+  .macro-bar .seg-prev { opacity: .35; }
+  .macro-bar .goal-mark { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--text); border-radius: 1px; left: 80%; }
+  .macro-legend { margin: -4px 0 0; font-size: 10.5px; color: var(--text-dim); display: flex; align-items: center; gap: 6px; }
+  .macro-legend i { display: inline-block; width: 2px; height: 12px; background: var(--text); border-radius: 1px; }
+  .macro-status:empty { display: none; }
+  .macro-row.protein .seg-prev, .macro-row.protein .seg-new { background: var(--protein); }
+  .macro-row.carb .seg-prev, .macro-row.carb .seg-new { background: var(--carb); }
+  .macro-row.fat .seg-prev, .macro-row.fat .seg-new { background: var(--fat); }
+  .macro-row.overflow .seg-new { background: var(--danger); }
+  .macro-status { display: inline-block; margin-top: 6px; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; opacity: 0; transform: translateY(4px); transition: opacity .3s ease, transform .3s ease; }
+  .macro-status.show { opacity: 1; transform: translateY(0); }
+  .macro-status.ok { background: rgba(20,184,166,.12); color: #0F8F81; }
+  .macro-status.low { background: var(--surface-2); color: var(--text-dim); }
+  .macro-status.over { background: rgba(240,48,79,.12); color: var(--danger); }
+
+  .day-verdict { border-radius: var(--radius); padding: 14px 16px; margin-bottom: 12px; display: flex; gap: 12px; align-items: flex-start; opacity: 0; transform: scale(.85); }
+  .day-verdict.show { animation: verdictIn .55s cubic-bezier(.3,1.6,.5,1) forwards; }
+  .day-verdict.ok { background: rgba(20,184,166,.12); border: 1.5px solid var(--scan); }
+  .day-verdict.near { background: rgba(255,174,0,.12); border: 1.5px solid var(--carb); }
+  .day-verdict.over { background: rgba(240,48,79,.10); border: 1.5px solid var(--danger); }
+  .day-verdict.over.show { animation: verdictIn .55s cubic-bezier(.3,1.6,.5,1) forwards, verdictShake .5s ease .6s 1, verdictGlow 1.4s ease-in-out .6s 3; }
+  @keyframes verdictIn { to { opacity: 1; transform: scale(1); } }
+  @keyframes verdictShake { 0%,100% { transform: translateX(0); } 20% { transform: translateX(-7px); } 40% { transform: translateX(6px); } 60% { transform: translateX(-4px); } 80% { transform: translateX(3px); } }
+  @keyframes verdictGlow { 0%,100% { box-shadow: 0 0 0 0 rgba(240,48,79,0); } 50% { box-shadow: 0 0 0 6px rgba(240,48,79,.18); } }
+  .day-verdict-icon { font-size: 26px; line-height: 1; }
+  .day-verdict-text strong { display: block; font-size: 14.5px; margin-bottom: 3px; }
+  .day-verdict-text p { margin: 0; font-size: 12.5px; color: var(--text); line-height: 1.45; }
+  .day-tips { display: flex; flex-direction: column; gap: 6px; margin: 0 0 14px; padding: 0 4px; }
+  .day-tips p { margin: 0; font-size: 12px; color: var(--text); display: flex; gap: 6px; opacity: 0; transform: translateX(-8px); transition: opacity .35s ease, transform .35s ease; }
+  .day-tips p.show { opacity: 1; transform: translateX(0); }
+  .day-tips p::before { content: '•'; color: var(--accent); }
+
+  .burst { position: fixed; pointer-events: none; z-index: 1200; width: 8px; height: 8px; border-radius: 2px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .day-sheet { transition: none; }
+    .day-verdict.show, .day-verdict.over.show, .delta-chip.pop { animation: none; opacity: 1; transform: none; }
+  }
+
   .goal-alert { position: fixed; top: max(16px, env(safe-area-inset-top)); left: 16px; right: 16px; max-width: 460px; margin: 0 auto; background: var(--surface); border: 2px solid var(--accent); border-radius: var(--radius); padding: 16px; z-index: 1000; animation: goalGlow 1.8s ease-in-out 3, goalSlideIn .3s ease-out; }
   .goal-alert[hidden] { display: none; }
   @keyframes goalGlow { 0%, 100% { box-shadow: 0 4px 20px rgba(255,107,69,0.18), var(--shadow); } 50% { box-shadow: 0 4px 30px rgba(255,107,69,0.5), var(--shadow); } }
@@ -265,6 +340,38 @@
 </head>
 <body>
 <div class="app">
+  <div class="day-sheet-backdrop" id="daySheetBackdrop" hidden></div>
+  <div class="day-sheet" id="daySheet" hidden role="dialog" aria-modal="true" aria-labelledby="daySheetTitle">
+    <div class="day-sheet-grip"></div>
+    <div class="day-sheet-head">
+      <span class="eyebrow">Refeição registrada</span>
+      <h2 id="daySheetTitle">Seu dia até agora</h2>
+      <p id="daySheetSub"></p>
+    </div>
+    <div class="kcal-ring-box">
+      <div class="kcal-ring" id="kcalRing">
+        <svg viewBox="0 0 120 120" aria-hidden="true">
+          <circle class="track" cx="60" cy="60" r="50"></circle>
+          <circle class="prev" id="kcalRingPrev" cx="60" cy="60" r="50"></circle>
+          <circle class="now" id="kcalRingNow" cx="60" cy="60" r="50"></circle>
+        </svg>
+        <div class="kcal-ring-center"><strong id="kcalRingPct">0%</strong><span>da meta</span></div>
+      </div>
+      <div class="kcal-ring-info">
+        <span class="big" id="kcalConsumed">0</span>
+        <span class="label" id="kcalGoalLabel">kcal consumidas hoje</span>
+        <span class="delta-chip" id="kcalDelta">+0 kcal</span>
+      </div>
+    </div>
+    <div class="macro-rows" id="macroRows"></div>
+    <div class="day-verdict" id="dayVerdict">
+      <span class="day-verdict-icon" id="dayVerdictIcon">✅</span>
+      <div class="day-verdict-text"><strong id="dayVerdictTitle"></strong><p id="dayVerdictText"></p></div>
+    </div>
+    <div class="day-tips" id="dayTips"></div>
+    <button type="button" class="btn-primary" id="daySheetClose">Continuar</button>
+  </div>
+
   <div class="goal-alert" id="goalAlert" hidden>
     <div class="goal-alert-inner">
       <span class="goal-alert-icon">🎯</span>
@@ -1331,12 +1438,280 @@ function checkGoalAlert(previousKcal, newKcal) {
   }
 }
 
+// --- Painel "Seu dia até agora" (motion após registrar refeição) ---
+function getMacroTargets(perfil) {
+  if (!perfil || !perfil.tdee) return null;
+  return {
+    kcal: Math.round(perfil.tdee),
+    proteina_g: Math.round(perfil.tdee * 0.3 / 4),
+    carboidrato_g: Math.round(perfil.tdee * 0.4 / 4),
+    gordura_g: Math.round(perfil.tdee * 0.3 / 9)
+  };
+}
+
+const reduceMotionPref = () => window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
+
+function tween(duration, onFrame) {
+  return new Promise((resolve) => {
+    if (reduceMotionPref() || duration <= 0) { onFrame(1); resolve(); return; }
+    const start = performance.now();
+    const step = (now) => {
+      const t = Math.min(1, (now - start) / duration);
+      onFrame(easeOutCubic(t));
+      if (t < 1) requestAnimationFrame(step); else resolve();
+    };
+    requestAnimationFrame(step);
+  });
+}
+
+function burstConfetti(anchorEl) {
+  if (reduceMotionPref() || !anchorEl || !anchorEl.animate) return;
+  const r = anchorEl.getBoundingClientRect();
+  const cx = r.left + r.width / 2;
+  const cy = r.top + r.height / 2;
+  const colors = ['#FF3D82', '#FFAE00', '#8B6BFF', '#14B8A6', '#FF6B45'];
+  for (let i = 0; i < 26; i++) {
+    const p = document.createElement('span');
+    p.className = 'burst';
+    p.style.left = cx + 'px';
+    p.style.top = cy + 'px';
+    p.style.background = colors[i % colors.length];
+    document.body.appendChild(p);
+    const angle = (Math.PI * 2 * i) / 26 + Math.random() * 0.4;
+    const dist = 60 + Math.random() * 70;
+    const dx = Math.cos(angle) * dist;
+    const dy = Math.sin(angle) * dist - 30;
+    p.animate([
+      { transform: 'translate(-50%,-50%) scale(1) rotate(0deg)', opacity: 1 },
+      { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy + 60}px)) scale(.6) rotate(${Math.random() * 540}deg)`, opacity: 0 }
+    ], { duration: 900 + Math.random() * 400, easing: 'cubic-bezier(.2,.8,.4,1)' }).onfinish = () => p.remove();
+  }
+}
+
+const daySheet = document.getElementById('daySheet');
+const daySheetBackdrop = document.getElementById('daySheetBackdrop');
+const daySheetCloseBtn = document.getElementById('daySheetClose');
+let daySheetAction = null;
+
+function closeDaySheet() {
+  daySheet.classList.remove('open');
+  daySheetBackdrop.classList.remove('open');
+  setTimeout(() => { daySheet.hidden = true; daySheetBackdrop.hidden = true; }, 380);
+  if (daySheetAction) { const a = daySheetAction; daySheetAction = null; a(); }
+}
+daySheetCloseBtn.addEventListener('click', closeDaySheet);
+daySheetBackdrop.addEventListener('click', () => { daySheetAction = null; closeDaySheet(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !daySheet.hidden) { daySheetAction = null; closeDaySheet(); } });
+
+function macroStatus(key, value, target) {
+  const pct = value / target;
+  const diff = Math.round(Math.abs(target - value));
+  if (key === 'proteina_g') {
+    if (pct > 1) return { cls: 'ok', text: 'Meta batida ✓ +' + diff + 'g' };
+    if (pct >= 0.9) return { cls: 'ok', text: 'Na meta ✓' };
+    return { cls: 'low', text: 'Faltam ' + diff + 'g' };
+  }
+  if (pct > 1) return { cls: 'over', text: 'Passou ' + diff + 'g' };
+  if (pct >= 0.9) return { cls: 'ok', text: 'No limite' };
+  return { cls: 'low', text: 'Restam ' + diff + 'g' };
+}
+
+async function showDaySummary(prev, now, meal) {
+  const perfil = loadPerfil();
+  const targets = getMacroTargets(perfil);
+  const reduce = reduceMotionPref();
+  const C = 2 * Math.PI * 50;
+
+  // Estado inicial
+  const ring = document.getElementById('kcalRing');
+  const ringPrev = document.getElementById('kcalRingPrev');
+  const ringNow = document.getElementById('kcalRingNow');
+  ring.classList.remove('over', 'near');
+  [ringPrev, ringNow].forEach((c) => { c.style.strokeDasharray = C; c.style.strokeDashoffset = C; });
+  const prevPct = targets ? prev.calorias_kcal / targets.kcal : 0;
+  const newPct = targets ? now.calorias_kcal / targets.kcal : 0;
+  ringPrev.style.strokeDashoffset = C * (1 - Math.min(prevPct, 1));
+  document.getElementById('kcalRingPct').textContent = targets ? Math.round(prevPct * 100) + '%' : '—';
+  document.getElementById('kcalConsumed').textContent = Math.round(prev.calorias_kcal);
+  document.getElementById('kcalGoalLabel').textContent = targets ? 'de ' + targets.kcal + ' kcal da sua meta' : 'kcal consumidas hoje';
+  const delta = document.getElementById('kcalDelta');
+  delta.textContent = '+' + Math.round(meal.calorias_kcal) + ' kcal desta refeição';
+  delta.classList.remove('pop');
+  const hora = new Date();
+  document.getElementById('daySheetSub').textContent = 'Atualizado às ' + String(hora.getHours()).padStart(2, '0') + ':' + String(hora.getMinutes()).padStart(2, '0');
+
+  const macroDefs = [
+    { key: 'proteina_g', label: 'Proteína', cls: 'protein' },
+    { key: 'carboidrato_g', label: 'Carboidrato', cls: 'carb' },
+    { key: 'gordura_g', label: 'Gordura', cls: 'fat' }
+  ];
+  const rowsEl = document.getElementById('macroRows');
+  rowsEl.innerHTML = '';
+  const maxNoTarget = Math.max(1, ...macroDefs.map((m) => now[m.key]));
+  const scale = (v, target) => target ? (Math.min(v / target, 1.25) / 1.25) * 100 : (v / maxNoTarget) * 100;
+  const rowRefs = macroDefs.map((m) => {
+    const row = document.createElement('div');
+    row.className = 'macro-row ' + m.cls;
+    const top = document.createElement('div');
+    top.className = 'macro-row-top';
+    const name = document.createElement('span');
+    name.className = 'macro-row-name';
+    name.textContent = m.label;
+    const val = document.createElement('span');
+    val.className = 'macro-row-val';
+    const strong = document.createElement('strong');
+    strong.textContent = Math.round(prev[m.key]);
+    val.append(strong, document.createTextNode(targets ? ' / ' + targets[m.key] + ' g' : ' g'));
+    top.append(name, val);
+    const bar = document.createElement('div');
+    bar.className = 'macro-bar';
+    const segPrev = document.createElement('div');
+    segPrev.className = 'seg-prev';
+    segPrev.style.width = scale(prev[m.key], targets && targets[m.key]) + '%';
+    const segNew = document.createElement('div');
+    segNew.className = 'seg-new';
+    segNew.style.width = scale(prev[m.key], targets && targets[m.key]) + '%';
+    bar.append(segPrev, segNew);
+    if (targets) {
+      const mark = document.createElement('div');
+      mark.className = 'goal-mark';
+      bar.appendChild(mark);
+    }
+    const status = document.createElement('span');
+    status.className = 'macro-status';
+    row.append(top, bar, status);
+    rowsEl.appendChild(row);
+    return { m, row, strong, segNew, status };
+  });
+  if (targets) {
+    const legend = document.createElement('p');
+    legend.className = 'macro-legend';
+    legend.innerHTML = '<i></i> traço = sua meta do dia (30% proteína · 40% carbo · 30% gordura)';
+    rowsEl.appendChild(legend);
+  }
+
+  const verdict = document.getElementById('dayVerdict');
+  verdict.className = 'day-verdict';
+  const tipsEl = document.getElementById('dayTips');
+  tipsEl.innerHTML = '';
+  daySheetCloseBtn.textContent = 'Continuar';
+  daySheetAction = null;
+
+  // Abre o painel
+  daySheet.hidden = false;
+  daySheetBackdrop.hidden = false;
+  void daySheet.offsetWidth;
+  daySheet.classList.add('open');
+  daySheetBackdrop.classList.add('open');
+  daySheet.scrollTop = 0;
+
+  await wait(reduce ? 0 : 380);
+
+  // Anel de calorias + contador
+  delta.classList.add('pop');
+  const kcalEl = document.getElementById('kcalConsumed');
+  const pctEl = document.getElementById('kcalRingPct');
+  const ringAnim = tween(1100, (t) => {
+    const kcal = prev.calorias_kcal + (now.calorias_kcal - prev.calorias_kcal) * t;
+    kcalEl.textContent = Math.round(kcal);
+    if (targets) {
+      const p = kcal / targets.kcal;
+      ringNow.style.strokeDashoffset = C * (1 - Math.min(p, 1));
+      pctEl.textContent = Math.round(p * 100) + '%';
+      ring.classList.toggle('over', p > 1);
+      ring.classList.toggle('near', p >= 0.9 && p <= 1);
+    } else {
+      ringNow.style.strokeDashoffset = C;
+    }
+  });
+
+  // Barras dos macros, em cascata
+  let proteinJustHit = null;
+  const barAnims = rowRefs.map((ref, i) => (async () => {
+    await wait(reduce ? 0 : 220 + i * 170);
+    const target = targets && targets[ref.m.key];
+    const from = prev[ref.m.key];
+    const to = now[ref.m.key];
+    await tween(900, (t) => {
+      const v = from + (to - from) * t;
+      ref.strong.textContent = Math.round(v);
+      ref.segNew.style.width = scale(v, target) + '%';
+      ref.row.classList.toggle('overflow', !!target && ref.m.key !== 'proteina_g' && v > target);
+    });
+    if (target) {
+      const st = macroStatus(ref.m.key, to, target);
+      ref.status.textContent = st.text;
+      ref.status.classList.add(st.cls);
+      if (ref.m.key === 'proteina_g' && from < target && to >= target) proteinJustHit = ref.row;
+    } else {
+      ref.status.textContent = Math.round(to - from) > 0 ? '+' + Math.round(to - from) + 'g agora' : '';
+      ref.status.classList.add('low');
+    }
+    requestAnimationFrame(() => ref.status.classList.add('show'));
+  })());
+
+  await Promise.all([ringAnim, ...barAnims]);
+  if (proteinJustHit) {
+    burstConfetti(proteinJustHit);
+    if (navigator.vibrate) navigator.vibrate([20, 40, 20]);
+  }
+
+  // Veredito do dia
+  const icon = document.getElementById('dayVerdictIcon');
+  const title = document.getElementById('dayVerdictTitle');
+  const text = document.getElementById('dayVerdictText');
+  let tips = [];
+  if (!targets) {
+    verdict.classList.add('near');
+    icon.textContent = '📋';
+    title.textContent = 'Defina sua meta';
+    text.textContent = 'Preencha peso, altura e idade em Minha Dieta para saber se você está dentro da meta.';
+    daySheetCloseBtn.textContent = 'Preencher meu perfil';
+    daySheetAction = () => activateTab('dieta');
+  } else {
+    const restante = Math.round(targets.kcal - now.calorias_kcal);
+    const faltaProt = Math.round(targets.proteina_g - now.proteina_g);
+    if (restante < 0) {
+      verdict.classList.add('over');
+      icon.textContent = '🚨';
+      title.textContent = 'Você passou da meta de hoje';
+      text.textContent = Math.abs(restante) + ' kcal acima da sua meta de ' + targets.kcal + ' kcal.';
+      tips = pickTips(3);
+      if (prev.calorias_kcal <= targets.kcal) {
+        setTimeout(() => { playAlertSound(); if (navigator.vibrate) navigator.vibrate([120, 60, 120]); }, reduce ? 0 : 450);
+      }
+    } else if (restante <= targets.kcal * 0.1) {
+      verdict.classList.add('near');
+      icon.textContent = '⚠️';
+      title.textContent = 'Perto do limite';
+      text.textContent = 'Restam só ' + restante + ' kcal hoje.' + (faltaProt > 0 ? ' Se comer algo, priorize proteína magra: ainda faltam ' + faltaProt + 'g.' : '');
+      tips = ['Prefira água, chá ou café sem açúcar até o fim do dia.', 'Se bater fome, vegetais e uma porção de proteína magra saciam com poucas calorias.'];
+    } else {
+      verdict.classList.add('ok');
+      icon.textContent = '✅';
+      title.textContent = 'Dentro da meta';
+      text.textContent = 'Restam ' + restante + ' kcal hoje.' + (faltaProt > 0 ? ' Ainda faltam ' + faltaProt + 'g de proteína para a meta.' : ' Meta de proteína batida!');
+    }
+  }
+  requestAnimationFrame(() => verdict.classList.add('show'));
+
+  await wait(reduce ? 0 : 500);
+  tips.forEach((tip, i) => {
+    const p = document.createElement('p');
+    p.textContent = tip;
+    tipsEl.appendChild(p);
+    setTimeout(() => p.classList.add('show'), reduce ? 0 : 120 * i + 20);
+  });
+}
+
 function registerMeal() {
   if (mealRegistered || currentItems.length === 0) return;
   const totals = updateTotal();
   const log = loadDailyLog();
   const key = todayKey();
-  const previousKcal = log[key] ? dayTotals(log[key]).calorias_kcal : 0;
+  const prevTotals = log[key] ? dayTotals(log[key]) : { proteina_g: 0, carboidrato_g: 0, gordura_g: 0, calorias_kcal: 0 };
+  const previousKcal = prevTotals.calorias_kcal;
   if (!log[key]) log[key] = { refeicoes: [] };
   const now = new Date();
   log[key].refeicoes.push({
@@ -1352,7 +1727,13 @@ function registerMeal() {
   mealRegistered = true;
   updateRegisterButton();
   renderTodayMini();
-  checkGoalAlert(previousKcal, previousKcal + totals.calorias_kcal);
+  const newTotals = {
+    proteina_g: prevTotals.proteina_g + totals.proteina_g,
+    carboidrato_g: prevTotals.carboidrato_g + totals.carboidrato_g,
+    gordura_g: prevTotals.gordura_g + totals.gordura_g,
+    calorias_kcal: previousKcal + totals.calorias_kcal
+  };
+  showDaySummary(prevTotals, newTotals, totals);
 }
 
 function updateRegisterButton() {
