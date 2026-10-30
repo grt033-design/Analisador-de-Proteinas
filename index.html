@@ -188,16 +188,34 @@
   .item-list { list-style: none; margin: 0; padding: 0; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
   .item-row { display: flex; flex-direction: column; gap: 7px; padding: 14px 16px; border-bottom: 1px solid var(--border); transition: background .2s; }
   .item-row:last-child { border-bottom: none; }
-  .item-row.confirmed { background: rgba(20, 184, 166, 0.08); }
   .item-top { display: flex; align-items: center; gap: 10px; }
   .item-emoji { font-size: 20px; flex-shrink: 0; line-height: 1; }
   .item-name-input { flex: 1; min-width: 0; background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 9px 10px; color: var(--text); font-family: 'Space Grotesk', sans-serif; font-size: 13.5px; }
   .item-name-input:focus { outline: none; border-color: var(--accent); }
   .source-tag { display: inline-block; font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: .03em; color: var(--text-dim); margin-left: 30px; }
   .source-tag.taco { color: var(--scan); font-weight: 600; }
-  .btn-confirm { flex-shrink: 0; width: 34px; height: 34px; border-radius: 50%; background: var(--surface-2); border: 1px solid var(--border); color: var(--text-dim); font-size: 15px; display: flex; align-items: center; justify-content: center; padding: 0; }
-  .item-row.confirmed .btn-confirm { background: var(--scan); border-color: var(--scan); color: #fff; }
-  @media (hover: hover) { .item-row.confirmed .btn-confirm:hover { background: var(--danger); border-color: var(--danger); } }
+  .btn-remove { flex-shrink: 0; width: 34px; height: 34px; border-radius: 50%; background: var(--surface-2); border: 1px solid var(--border); color: var(--text-dim); font-size: 15px; display: flex; align-items: center; justify-content: center; padding: 0; }
+  .btn-remove svg { width: 16px; height: 16px; }
+  @media (hover: hover) { .btn-remove:hover { background: var(--danger); border-color: var(--danger); color: #fff; } }
+  .item-row.removing { opacity: 0; transform: translateX(30px); transition: opacity .2s ease, transform .2s ease; }
+  .item-row.added { animation: itemAdded 1.4s ease; }
+  @keyframes itemAdded { 0% { background: rgba(20, 184, 166, .22); } 100% { background: transparent; } }
+  .item-empty { text-align: center; color: var(--text-dim); font-size: 13px; padding: 18px 12px; list-style: none; }
+  /* Adicionar o que faltou */
+  .add-food { margin: 14px 0 6px; padding: 14px; border-radius: 18px; border: 1.5px dashed var(--border); background: var(--surface); }
+  .add-food-title { margin: 0 0 10px; font-weight: 700; font-size: 14px; color: var(--text); }
+  .add-food-row { display: flex; gap: 8px; }
+  .add-food-row input { flex: 1; min-width: 0; font-size: 15px; padding: 11px 12px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); }
+  .add-food-row input:focus { outline: none; border-color: var(--accent); }
+  .add-food-row button { flex: 0 0 auto; width: auto; padding: 0 16px; border-radius: 12px; background: var(--accent); color: #fff; border: none; font-weight: 700; font-size: 14px; }
+  .add-food-row button:disabled { opacity: .5; }
+  .add-food .voice-row { padding: 10px 0 0; }
+  .add-food-status { margin: 8px 0 0; font-size: 12.5px; color: var(--text-dim); min-height: 1em; }
+  .add-food-status.error { color: var(--danger); }
+  /* Aviso rápido (voltar para sair, item removido) */
+  .qp-toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom)); transform: translate(-50%, 20px); background: #211D18; color: #fff; padding: 12px 16px; border-radius: 14px; font-size: 14px; display: flex; gap: 14px; align-items: center; z-index: 3000; opacity: 0; pointer-events: none; transition: opacity .2s ease, transform .2s ease; box-shadow: 0 10px 30px rgba(0,0,0,.25); max-width: calc(100% - 32px); }
+  .qp-toast.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+  .qp-toast button { width: auto; background: none; border: none; color: #FFAE00; font-weight: 700; padding: 0; font-size: 14px; }
   .item-numbers-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px 12px; }
   .num-field { display: flex; align-items: center; gap: 5px; }
   .item-num-input { width: 56px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 7px 8px; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 12.5px; font-weight: 600; }
@@ -487,6 +505,17 @@
       </div>
       <div class="confidence-tag" id="confidenceTag"></div>
       <ul class="item-list" id="itemList"></ul>
+      <div class="add-food" id="addFood">
+        <p class="add-food-title">Faltou alguma coisa no prato?</p>
+        <form class="add-food-row" id="addFoodForm">
+          <input type="text" id="addFoodInput" placeholder="Ex.: 2 ovos cozidos, 1 copo de suco" autocomplete="off" enterkeyhint="send" aria-label="Alimento para adicionar">
+          <button type="submit" id="addFoodBtn">Adicionar</button>
+        </form>
+        <div class="voice-row" id="addVoiceRow">
+          <button type="button" class="btn-voice" id="addVoiceBtn">🎤 Ou fale o que faltou</button>
+        </div>
+        <p class="add-food-status" id="addFoodStatus" role="status"></p>
+      </div>
       <p class="observation" id="observationText"></p>
       <button type="button" class="btn-primary" id="registerMealBtn">Registrar refeição de hoje</button>
       <button type="button" class="btn-secondary" id="resetBtn">Analisar outra foto</button>
@@ -502,7 +531,7 @@
     </div>
     <div class="food-table-panel" id="foodTablePanel" hidden>
       <ul class="food-table-list" id="foodTableList"></ul>
-      <p class="food-table-empty" id="foodTableEmpty">Nenhum alimento confirmado ainda. Confirme leituras nas análises para o app aprender com você.</p>
+      <p class="food-table-empty" id="foodTableEmpty">Nenhum alimento aprendido ainda. Os itens das refeições que você registra viram referência para as próximas análises.</p>
     </div>
 
     <p class="disclaimer">Estimativa gerada por IA e pela tabela TACO a partir da imagem ou descrição por voz. Pratos mistos, molhos, sobreposição de alimentos e porções fora do enquadramento reduzem a precisão. Use como referência, não como medição exata.</p>
@@ -823,6 +852,8 @@ function resetScanner() {
   itemListEl.innerHTML = '';
   mealRegistered = false;
   updateRegisterButton();
+  if (typeof addFoodStatus !== 'undefined') { addFoodStatus.textContent = ''; addFoodInput.value = ''; }
+  if (typeof saveSession === 'function') saveSession();
 }
 
 resetBtn.addEventListener('click', resetScanner);
@@ -981,9 +1012,10 @@ function stopScanTimer() {
 const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
 const voiceBtn = document.getElementById('voiceBtn');
 
-if (!SpeechRecognitionAPI) {
-  voiceRow.hidden = true;
-} else {
+let activeRecorder = null;
+
+function makeVoiceRecorder(btn, row, onTranscript) {
+  if (!SpeechRecognitionAPI) { row.hidden = true; return null; }
   // Grava como áudio do WhatsApp: continua ouvindo (inclusive nas pausas) até a pessoa tocar em Enviar.
   let rec = null;            // reconhecimento ativo
   let recording = false;     // a pessoa ainda está gravando
@@ -1080,7 +1112,7 @@ if (!SpeechRecognitionAPI) {
   }
 
   function openPanel() {
-    voiceBtn.hidden = true;
+    btn.hidden = true;
     panel = document.createElement('div');
     panel.className = 'voice-rec';
     panel.innerHTML =
@@ -1091,7 +1123,8 @@ if (!SpeechRecognitionAPI) {
         '<button type="button" class="voice-rec-send"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3.4 20.4 21 12 3.4 3.6 3.4 10.1 15 12 3.4 13.9z"/></svg>Enviar</button>' +
       '</div>' +
       '<p class="voice-rec-note">Toque em Enviar quando terminar de falar.</p>';
-    voiceRow.appendChild(panel);
+    row.appendChild(panel);
+    activeRecorder = api;
     panel.querySelector('.voice-rec-cancel').addEventListener('click', cancelRecording);
     panel.querySelector('.voice-rec-send').addEventListener('click', sendRecording);
     recStart = Date.now();
@@ -1105,7 +1138,8 @@ if (!SpeechRecognitionAPI) {
     clearInterval(recTimer);
     if (panel) panel.remove();
     panel = null;
-    voiceBtn.hidden = false;
+    btn.hidden = false;
+    if (activeRecorder === api) activeRecorder = null;
     const r = rec;
     rec = null;
     if (r) { try { r.abort(); } catch (e) {} }
@@ -1137,27 +1171,35 @@ if (!SpeechRecognitionAPI) {
       showError('Não consegui ouvir nada. Toque no microfone e tente de novo.');
       return;
     }
-    resultsEl.classList.remove('visible');
-    errorBox.classList.remove('visible');
-    lastDataUrl = null;
-    lastRetryFn = () => analyzeText(transcript);
-    showVoiceProcessing(transcript);
-    try {
-      const parsed = await analyzeText(transcript);
-      await finishAndRender(parsed);
-    } catch (err) {
-      showError(err.message || 'Não foi possível analisar a descrição.');
-    }
+    onTranscript(transcript);
   }
 
-  voiceBtn.addEventListener('click', () => {
+  const api = { cancel: () => cancelRecording(), isOpen: () => !!panel };
+
+  btn.addEventListener('click', () => {
     if (recording || panel) return;
+    if (activeRecorder && activeRecorder !== api) activeRecorder.cancel();
     committed = []; sessionFinals = []; interimText = '';
     recording = true;
     openPanel();
     try { startSession(); } catch (e) { closePanel(); showError('Não foi possível iniciar o microfone.'); }
   });
+  return api;
 }
+
+makeVoiceRecorder(voiceBtn, voiceRow, async (transcript) => {
+  resultsEl.classList.remove('visible');
+  errorBox.classList.remove('visible');
+  lastDataUrl = null;
+  lastRetryFn = () => analyzeText(transcript);
+  showVoiceProcessing(transcript);
+  try {
+    const parsed = await analyzeText(transcript);
+    await finishAndRender(parsed);
+  } catch (err) {
+    showError(err.message || 'Não foi possível analisar a descrição.');
+  }
+});
 
 function loadFoodTable() {
   try {
@@ -1260,7 +1302,23 @@ const confidenceLabels = { alta: 'Confiança alta', média: 'Confiança média',
 
 function renderResults(parsed) {
   stopScanTimer();
-  currentItems = (parsed.itens || []).map(it => {
+  currentItems = (parsed.itens || []).map(normalizeItem);
+  document.getElementById('confidenceTag').textContent = confidenceLabels[parsed.confianca] || (parsed.confianca || '');
+  document.getElementById('observationText').textContent = parsed.observacao || '';
+  lastConfidence = parsed.confianca || '';
+  lastObservation = parsed.observacao || '';
+  mealRegistered = false;
+  updateRegisterButton();
+  renderItemList();
+  updateTotal();
+  resultsEl.classList.add('visible');
+  saveSession();
+}
+
+let lastConfidence = '';
+let lastObservation = '';
+
+function normalizeItem(it) {
     const peso_g = Math.round(it.peso_g || 0);
     const taco = matchTaco(it.nome);
     if (taco) {
@@ -1271,8 +1329,7 @@ function renderResults(parsed) {
         proteina_g: Math.round(taco.proteina * fator),
         carboidrato_g: Math.round(taco.carboidrato * fator),
         gordura_g: Math.round(taco.gordura * fator),
-        fonte: 'TACO',
-        confirmado: false
+        fonte: 'TACO'
       };
     }
     return {
@@ -1281,17 +1338,8 @@ function renderResults(parsed) {
       proteina_g: Math.round(it.proteina_g || 0),
       carboidrato_g: Math.round(it.carboidrato_g || 0),
       gordura_g: Math.round(it.gordura_g || 0),
-      fonte: 'IA',
-      confirmado: false
+      fonte: 'IA'
     };
-  });
-  document.getElementById('confidenceTag').textContent = confidenceLabels[parsed.confianca] || (parsed.confianca || '');
-  document.getElementById('observationText').textContent = parsed.observacao || '';
-  mealRegistered = false;
-  updateRegisterButton();
-  renderItemList();
-  updateTotal();
-  resultsEl.classList.add('visible');
 }
 
 function makeNumberField(item, idx, field, unitLabel, colorClass) {
@@ -1315,7 +1363,8 @@ function renderItemList() {
   itemListEl.innerHTML = '';
   currentItems.forEach((item, idx) => {
     const li = document.createElement('li');
-    li.className = 'item-row' + (item.confirmado ? ' confirmed' : '');
+    li.className = 'item-row' + (item._novo ? ' added' : '');
+    delete item._novo;
 
     const top = document.createElement('div');
     top.className = 'item-top';
@@ -1330,16 +1379,15 @@ function renderItemList() {
     nameInput.dataset.idx = idx;
     nameInput.dataset.field = 'nome';
 
-    const confirmBtn = document.createElement('button');
-    confirmBtn.type = 'button';
-    confirmBtn.className = 'btn-confirm';
-    confirmBtn.title = item.confirmado ? 'Desfazer confirmação' : 'Confirmar leitura';
-    confirmBtn.setAttribute('aria-label', item.confirmado ? 'Desfazer confirmação de ' + item.nome : 'Confirmar leitura de ' + item.nome);
-    confirmBtn.setAttribute('aria-pressed', item.confirmado ? 'true' : 'false');
-    confirmBtn.dataset.idx = idx;
-    confirmBtn.textContent = '✓';
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'btn-remove';
+    removeBtn.title = 'Excluir este item';
+    removeBtn.setAttribute('aria-label', 'Excluir ' + (item.nome || 'item'));
+    removeBtn.dataset.idx = idx;
+    removeBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6"/></svg>';
 
-    top.append(emojiSpan, nameInput, confirmBtn);
+    top.append(emojiSpan, nameInput, removeBtn);
 
     const sourceTag = document.createElement('span');
     sourceTag.className = 'source-tag' + (item.fonte === 'TACO' ? ' taco' : '');
@@ -1357,6 +1405,13 @@ function renderItemList() {
     li.append(top, sourceTag, numbersGrid);
     itemListEl.appendChild(li);
   });
+  if (currentItems.length === 0) {
+    const empty = document.createElement('li');
+    empty.className = 'item-empty';
+    empty.textContent = 'Nenhum alimento na lista. Adicione abaixo o que você comeu.';
+    itemListEl.appendChild(empty);
+  }
+  registerMealBtn.disabled = mealRegistered || currentItems.length === 0;
 }
 
 itemListEl.addEventListener('input', (e) => {
@@ -1366,12 +1421,6 @@ itemListEl.addEventListener('input', (e) => {
   const item = currentItems[idx];
   if (!item) return;
   item[field] = field === 'nome' ? e.target.value : (parseFloat(e.target.value) || 0);
-  if (item.confirmado) {
-    // Mudou um número depois de confirmar: desfaz o aprendizado para ele não contar com o valor antigo
-    unconfirmItem(Number(idx), false);
-    const li = e.target.closest('.item-row');
-    if (li) li.classList.remove('confirmed');
-  }
   if (mealRegistered) {
     mealRegistered = false;
     updateRegisterButton();
@@ -1380,12 +1429,72 @@ itemListEl.addEventListener('input', (e) => {
 });
 
 itemListEl.addEventListener('click', (e) => {
-  const btn = e.target.closest('.btn-confirm');
+  const btn = e.target.closest('.btn-remove');
   if (!btn) return;
-  const i = Number(btn.dataset.idx);
-  if (currentItems[i] && currentItems[i].confirmado) unconfirmItem(i, true);
-  else confirmItem(i);
+  removeItem(Number(btn.dataset.idx), btn.closest('.item-row'));
 });
+
+function removeItem(idx, li) {
+  const item = currentItems[idx];
+  if (!item) return;
+  const done = () => {
+    currentItems.splice(idx, 1);
+    if (mealRegistered) { mealRegistered = false; updateRegisterButton(); }
+    renderItemList();
+    updateTotal();
+    saveSession();
+    showToast((item.nome || 'Item') + ' removido', 'Desfazer', () => {
+      currentItems.splice(Math.min(idx, currentItems.length), 0, item);
+      renderItemList();
+      updateTotal();
+      saveSession();
+    });
+  };
+  if (li && !reduceMotionPref()) { li.classList.add('removing'); setTimeout(done, 200); } else done();
+}
+
+// --- Adicionar o que faltou (texto ou voz) ---
+const addFoodForm = document.getElementById('addFoodForm');
+const addFoodInput = document.getElementById('addFoodInput');
+const addFoodBtn = document.getElementById('addFoodBtn');
+const addFoodStatus = document.getElementById('addFoodStatus');
+let addingFood = false;
+
+async function addMissingFood(descricao) {
+  descricao = (descricao || '').trim();
+  if (!descricao || addingFood) return;
+  addingFood = true;
+  addFoodBtn.disabled = true;
+  addFoodStatus.classList.remove('error');
+  addFoodStatus.textContent = 'Calculando "' + descricao + '"...';
+  try {
+    const parsed = await analyzeText(descricao);
+    const novos = (parsed.itens || []).map(normalizeItem).filter((it) => it.nome);
+    if (!novos.length) throw new Error('Não identifiquei nenhum alimento. Tente escrever de outro jeito.');
+    novos.forEach((it) => { it._novo = true; currentItems.push(it); });
+    if (mealRegistered) { mealRegistered = false; updateRegisterButton(); }
+    renderItemList();
+    updateTotal();
+    saveSession();
+    addFoodInput.value = '';
+    addFoodStatus.textContent = 'Adicionado: ' + novos.map((it) => it.nome).join(', ') + '.';
+    const last = itemListEl.querySelector('.item-row:last-of-type');
+    if (last) last.scrollIntoView({ behavior: reduceMotionPref() ? 'auto' : 'smooth', block: 'center' });
+  } catch (err) {
+    addFoodStatus.classList.add('error');
+    addFoodStatus.textContent = err.message || 'Não foi possível adicionar agora. Tente de novo.';
+  } finally {
+    addingFood = false;
+    addFoodBtn.disabled = false;
+  }
+}
+
+addFoodForm.addEventListener('submit', (e) => {
+  e.preventDefault();
+  addMissingFood(addFoodInput.value);
+});
+
+makeVoiceRecorder(document.getElementById('addVoiceBtn'), document.getElementById('addVoiceRow'), (transcript) => addMissingFood(transcript));
 
 function updateTotal() {
   const totals = currentItems.reduce((acc, it) => {
@@ -1407,47 +1516,27 @@ function updateTotal() {
   };
 }
 
-function confirmItem(idx) {
-  const item = currentItems[idx];
-  if (!item) return;
-  const key = normalizeKey(item.nome);
-  if (!key) return;
+// Ao registrar a refeição, os itens que ficaram na lista viram referência para as próximas análises
+function learnFromItems(items) {
   const table = loadFoodTable();
-  const existing = table[key];
-  // Guarda como a tabela estava, para poder desfazer se a pessoa marcou por engano
-  item._undo = { key, before: existing ? JSON.parse(JSON.stringify(existing)) : null };
-  if (existing) {
-    const n = existing.confirmacoes;
-    existing.peso_g = avg(existing.peso_g, item.peso_g, n);
-    existing.proteina_g = avg(existing.proteina_g, item.proteina_g, n);
-    existing.carboidrato_g = avg(existing.carboidrato_g, item.carboidrato_g, n);
-    existing.gordura_g = avg(existing.gordura_g, item.gordura_g, n);
-    existing.confirmacoes = n + 1;
-    existing.nome = item.nome;
-    existing.atualizado_em = new Date().toISOString();
-  } else {
-    table[key] = { nome: item.nome, peso_g: item.peso_g, proteina_g: item.proteina_g, carboidrato_g: item.carboidrato_g, gordura_g: item.gordura_g, confirmacoes: 1, atualizado_em: new Date().toISOString() };
-  }
+  items.forEach((item) => {
+    const key = normalizeKey(item.nome);
+    if (!key) return;
+    const existing = table[key];
+    if (existing) {
+      const n = existing.confirmacoes;
+      existing.peso_g = avg(existing.peso_g, item.peso_g, n);
+      existing.proteina_g = avg(existing.proteina_g, item.proteina_g, n);
+      existing.carboidrato_g = avg(existing.carboidrato_g, item.carboidrato_g, n);
+      existing.gordura_g = avg(existing.gordura_g, item.gordura_g, n);
+      existing.confirmacoes = n + 1;
+      existing.nome = item.nome;
+      existing.atualizado_em = new Date().toISOString();
+    } else {
+      table[key] = { nome: item.nome, peso_g: item.peso_g, proteina_g: item.proteina_g, carboidrato_g: item.carboidrato_g, gordura_g: item.gordura_g, confirmacoes: 1, atualizado_em: new Date().toISOString() };
+    }
+  });
   saveFoodTable(table);
-  item.confirmado = true;
-  renderItemList();
-  updateTotal();
-  updateFoodTableCount();
-}
-
-function unconfirmItem(idx, rerender) {
-  const item = currentItems[idx];
-  if (!item || !item.confirmado) return;
-  const undo = item._undo;
-  if (undo && undo.key) {
-    const table = loadFoodTable();
-    if (undo.before) table[undo.key] = undo.before;
-    else delete table[undo.key];
-    saveFoodTable(table);
-  }
-  item._undo = null;
-  item.confirmado = false;
-  if (rerender) { renderItemList(); updateTotal(); }
   updateFoodTableCount();
 }
 
@@ -1942,7 +2031,9 @@ function registerMeal() {
     itens: currentItems.map(it => it.nome)
   });
   saveDailyLog(log);
+  learnFromItems(currentItems);
   mealRegistered = true;
+  saveSession();
   updateRegisterButton();
   renderTodayMini();
   const newTotals = {
@@ -1961,7 +2052,7 @@ function updateRegisterButton() {
     registerMealBtn.classList.add('registered');
   } else {
     registerMealBtn.textContent = 'Registrar refeição de hoje';
-    registerMealBtn.disabled = false;
+    registerMealBtn.disabled = currentItems.length === 0;
     registerMealBtn.classList.remove('registered');
   }
 }
@@ -2327,11 +2418,14 @@ document.querySelectorAll('.tab-btn').forEach((btn) => {
 });
 document.getElementById('miniDietaLink').addEventListener('click', () => activateTab('dieta'));
 
+let currentTab = 'scanner';
 function activateTab(tab) {
+  currentTab = tab;
   document.querySelectorAll('.tab-btn').forEach((b) => b.classList.toggle('active', b.dataset.tab === tab));
   document.getElementById('tabScanner').hidden = tab !== 'scanner';
   document.getElementById('tabDieta').hidden = tab !== 'dieta';
   if (tab === 'dieta') renderDashboard();
+  if (typeof saveSession === 'function') saveSession();
 }
 
 // --- Avisos e novidades (publicados pelo administrador em avisos.json) ---
@@ -2507,6 +2601,110 @@ updateFoodTableCount();
 renderTodayMini();
 preencherCamposPerfil(loadPerfil());
 renderPerfilResultados(loadPerfil());
+
+// --- Aviso rápido na parte de baixo da tela ---
+let toastEl = null, toastTimer = null;
+function showToast(text, actionLabel, onAction) {
+  if (!toastEl) {
+    toastEl = document.createElement('div');
+    toastEl.className = 'qp-toast';
+    toastEl.setAttribute('role', 'status');
+    document.body.appendChild(toastEl);
+  }
+  toastEl.textContent = '';
+  const span = document.createElement('span');
+  span.textContent = text;
+  toastEl.appendChild(span);
+  if (actionLabel && onAction) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = actionLabel;
+    b.addEventListener('click', () => { hideToast(); onAction(); });
+    toastEl.appendChild(b);
+  }
+  toastEl.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(hideToast, actionLabel ? 4500 : 2000);
+}
+function hideToast() { if (toastEl) toastEl.classList.remove('show'); }
+
+// --- Sessão: volta para onde a pessoa estava se o celular fechar o app em segundo plano ---
+const SESSION_KEY = 'proteina_sessao_v1';
+const SESSION_MAX_AGE = 12 * 60 * 60 * 1000;
+function saveSession() {
+  try {
+    const data = {
+      at: Date.now(),
+      tab: currentTab,
+      scrollY: Math.round(window.scrollY || 0),
+      itens: mealRegistered ? [] : currentItems.map(({ nome, peso_g, proteina_g, carboidrato_g, gordura_g, fonte }) => ({ nome, peso_g, proteina_g, carboidrato_g, gordura_g, fonte })),
+      resultadosVisiveis: !mealRegistered && resultsEl.classList.contains('visible'),
+      confianca: lastConfidence,
+      observacao: lastObservation,
+      rascunho: addFoodInput ? addFoodInput.value : ''
+    };
+    localStorage.setItem(SESSION_KEY, JSON.stringify(data));
+  } catch (e) {}
+}
+function restoreSession() {
+  let data = null;
+  try { data = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); } catch (e) {}
+  if (!data || !data.at || Date.now() - data.at > SESSION_MAX_AGE) return;
+  if (data.resultadosVisiveis && Array.isArray(data.itens)) {
+    currentItems = data.itens;
+    lastConfidence = data.confianca || '';
+    lastObservation = data.observacao || '';
+    document.getElementById('confidenceTag').textContent = confidenceLabels[lastConfidence] || lastConfidence;
+    document.getElementById('observationText').textContent = lastObservation;
+    mealRegistered = false;
+    updateRegisterButton();
+    renderItemList();
+    updateTotal();
+    resultsEl.classList.add('visible');
+    if (data.rascunho) addFoodInput.value = data.rascunho;
+  }
+  if (data.tab && data.tab !== 'scanner') activateTab(data.tab);
+  if (data.scrollY) requestAnimationFrame(() => setTimeout(() => window.scrollTo(0, data.scrollY), 60));
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') saveSession(); });
+window.addEventListener('pagehide', saveSession);
+let scrollSaveTimer = null;
+window.addEventListener('scroll', () => { clearTimeout(scrollSaveTimer); scrollSaveTimer = setTimeout(saveSession, 400); }, { passive: true });
+addFoodInput.addEventListener('input', () => { clearTimeout(scrollSaveTimer); scrollSaveTimer = setTimeout(saveSession, 400); });
+itemListEl.addEventListener('input', () => { clearTimeout(scrollSaveTimer); scrollSaveTimer = setTimeout(saveSession, 600); });
+
+// --- Botão voltar do celular: fecha o que estiver aberto e só sai com dois toques ---
+let lastBackAt = 0;
+function ensureBackGuard() {
+  if (!history.state || history.state.qp !== 'guard') {
+    try { history.pushState({ qp: 'guard' }, ''); } catch (e) {}
+  }
+}
+try { history.replaceState({ qp: 'base' }, ''); } catch (e) {}
+ensureBackGuard();
+// O Chrome pode ignorar a entrada criada sem toque do usuário; recria no primeiro toque
+['pointerdown', 'keydown'].forEach((ev) => document.addEventListener(ev, ensureBackGuard, { passive: true }));
+
+window.addEventListener('popstate', () => {
+  // 1) Primeiro fecha o que estiver por cima
+  if (!daySheet.hidden && daySheet.classList.contains('open')) { daySheetAction = null; closeDaySheet(); ensureBackGuard(); return; }
+  if (!notifPanel.hidden) { closeNotices(); ensureBackGuard(); return; }
+  if (!goalAlertEl.hidden) { goalAlertEl.hidden = true; ensureBackGuard(); return; }
+  if (activeRecorder && activeRecorder.isOpen()) { activeRecorder.cancel(); ensureBackGuard(); return; }
+  if (currentTab !== 'scanner') { activateTab('scanner'); window.scrollTo(0, 0); ensureBackGuard(); return; }
+  // 2) Na tela principal: precisa de dois toques seguidos para sair
+  const now = Date.now();
+  if (now - lastBackAt < 2000) {
+    saveSession();
+    history.back();
+    return;
+  }
+  lastBackAt = now;
+  showToast('Toque em voltar de novo para sair');
+  ensureBackGuard();
+});
+
+restoreSession();
 </script>
 </body>
 </html>
