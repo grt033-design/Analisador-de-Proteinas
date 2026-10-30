@@ -13,29 +13,30 @@
 <link rel="icon" href="icon-192.png" type="image/png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.1/chart.umd.min.js"></script>
 <style>
   :root {
-    --bg: #FBF7F2;
+    --bg: #F1F7F4;
     --surface: #FFFFFF;
-    --surface-2: #F3EEE5;
-    --border: #EAE2D4;
-    --text: #241F18;
-    --text-dim: #8A8172;
-    --accent: #FF6B45;
-    --accent-dim: #E25730;
+    --surface-2: #E9F4EF;
+    --border: #DCEBE4;
+    --text: #15302A;
+    --text-dim: #6E857D;
+    --accent: #14A37F;
+    --accent-dim: #0E8667;
+    --orange: #FF7A4D;
     --scan: #14B8A6;
     --danger: #F0304F;
     --protein: #FF3D82;
     --carb: #FFAE00;
     --fat: #8B6BFF;
-    --radius: 14px;
-    --shadow: 0 1px 3px rgba(36,31,24,0.05), 0 6px 16px rgba(36,31,24,0.05);
+    --radius: 20px;
+    --shadow: 0 1px 2px rgba(21,48,42,0.04), 0 8px 24px rgba(21,48,42,0.06);
   }
   * { box-sizing: border-box; }
-  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: 'Space Grotesk', sans-serif; -webkit-font-smoothing: antialiased; }
-  body { min-height: 100vh; display: flex; justify-content: center; padding: max(32px, env(safe-area-inset-top)) 16px calc(60px + env(safe-area-inset-bottom)); }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: 'Plus Jakarta Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  body { min-height: 100vh; display: flex; justify-content: center; padding: max(20px, env(safe-area-inset-top)) 16px calc(110px + env(safe-area-inset-bottom)); }
   [hidden] { display: none !important; }
   .app { width: 100%; max-width: 460px; position: relative; }
 
@@ -65,15 +66,21 @@
   .notif-text { font-size: 12.5px; color: var(--text); margin: 0; line-height: 1.45; white-space: pre-line; }
   .notif-link { display: inline-block; margin-top: 6px; font-size: 12px; font-weight: 700; color: var(--accent); text-decoration: none; }
   .notif-empty { padding: 26px 16px; text-align: center; color: var(--text-dim); font-size: 12.5px; margin: 0; }
-  header { padding: 0 46px; }
-  header { text-align: center; margin-bottom: 18px; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .topbar { text-align: center; margin: 2px 0 16px; padding: 0 50px; }
+  .topbar-date { display: block; font-size: 12px; color: var(--text-dim); font-weight: 600; }
+  .topbar h1 { font-size: 22px; font-weight: 800; margin: 2px 0 0; letter-spacing: -0.02em; }
   .eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.16em; color: var(--accent); text-transform: uppercase; font-weight: 700; }
   h1 { font-size: 28px; font-weight: 700; margin: 10px 0 8px; letter-spacing: -0.01em; }
   .sub { color: var(--text-dim); font-size: 14px; line-height: 1.5; margin: 0; }
 
-  .tab-bar { display: flex; gap: 6px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 4px; margin-bottom: 18px; box-shadow: var(--shadow); }
-  .tab-btn { flex: 1; background: none; border: none; color: var(--text-dim); font-size: 13px; font-weight: 600; padding: 10px; border-radius: 9px; }
-  .tab-btn.active { background: var(--accent); color: #fff; }
+  .bottom-nav { position: fixed; left: 50%; bottom: 0; transform: translateX(-50%); width: 100%; max-width: 520px; z-index: 900; display: flex; align-items: flex-end; justify-content: space-around; background: rgba(255,255,255,.96); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-top: 1px solid var(--border); padding: 6px 8px calc(8px + env(safe-area-inset-bottom)); box-shadow: 0 -6px 24px rgba(21,48,42,.06); }
+  .tab-btn { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; background: none; border: none; color: var(--text-dim); font-size: 11px; font-weight: 700; padding: 6px 2px; border-radius: 12px; }
+  .tab-btn svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+  .nav-add { flex: 0 0 auto; width: 56px; height: 56px; margin: -22px 6px 2px; border-radius: 50%; padding: 0; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 20px rgba(20,163,127,.35); border: 4px solid var(--bg); }
+  .nav-add svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; }
+  .nav-add:active { transform: scale(.94); }
+  .tab-btn.active { color: var(--accent); }
   .tab-panel[hidden] { display: none; }
 
   .install-row { display: flex; justify-content: center; margin: 16px 0 22px; }
@@ -81,10 +88,38 @@
   .ios-hint { color: var(--text-dim); font-size: 12px; line-height: 1.5; text-align: center; margin: 0 8px 22px; }
   .ios-hint strong { color: var(--text); font-weight: 600; }
 
-  .today-mini { display: flex; align-items: center; justify-content: space-between; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 16px; margin-bottom: 20px; font-size: 12.5px; box-shadow: var(--shadow); }
-  .today-mini-text { color: var(--text-dim); }
-  .today-mini-text strong { color: var(--protein); font-family: 'JetBrains Mono', monospace; }
-  .today-mini a.btn-link { margin: 0; }
+  /* Cartão do dia: anel de proteína, meta e fontes */
+  .today-card { background: var(--surface); border: 1px solid var(--border); border-radius: 26px; padding: 22px 18px 16px; margin-bottom: 18px; box-shadow: var(--shadow); }
+  .tc-ring { position: relative; width: 210px; height: 210px; margin: 0 auto 16px; }
+  .tc-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .tc-ring circle { fill: none; stroke-width: 16; }
+  .tc-ring-bg { stroke: var(--surface-2); }
+  .tc-ring-fg { stroke: url(#tcGrad); stroke-linecap: round; stroke-dasharray: 540.35; stroke-dashoffset: 540.35; transition: stroke-dashoffset 1s cubic-bezier(.3,1,.4,1); }
+  .tc-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .tc-icon { font-size: 26px; line-height: 1; margin-bottom: 4px; filter: grayscale(.2); }
+  .tc-value { font-size: 18px; font-weight: 700; color: var(--text); }
+  .tc-value strong { font-size: 44px; font-weight: 800; letter-spacing: -0.03em; }
+  .tc-of { font-size: 13px; color: var(--text-dim); margin-top: 2px; }
+  .tc-goal { display: flex; align-items: center; gap: 12px; background: linear-gradient(135deg, #CFEDE2, #E3F5EE); border-radius: 18px; padding: 14px 16px; margin-bottom: 18px; }
+  .tc-goal-icon { font-size: 20px; }
+  .tc-goal-text { display: flex; flex-direction: column; flex: 1; }
+  .tc-goal-text small, .tc-goal-rest small { font-size: 12px; color: var(--text-dim); font-weight: 600; }
+  .tc-goal-text strong { font-size: 16px; font-weight: 800; }
+  .tc-goal-rest { display: flex; flex-direction: column; align-items: flex-end; }
+  .tc-goal-rest strong { font-size: 20px; font-weight: 800; color: var(--accent-dim); }
+  .tc-goal.done .tc-goal-rest strong { color: var(--accent); }
+  .tc-goal.over .tc-goal-rest strong { color: var(--orange); }
+  .tc-sources-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 4px; }
+  .tc-sources-head h3 { margin: 0; font-size: 15px; font-weight: 800; }
+  .tc-sources-head span { font-size: 12px; color: var(--text-dim); }
+  .tc-list { list-style: none; margin: 0; padding: 0; }
+  .tc-list li { display: flex; align-items: center; gap: 12px; padding: 11px 2px; border-bottom: 1px solid var(--border); font-size: 14.5px; font-weight: 600; }
+  .tc-list li:last-child { border-bottom: none; }
+  .tc-list .tc-em { width: 34px; height: 34px; border-radius: 10px; background: var(--surface-2); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+  .tc-list .tc-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tc-list .tc-g { font-weight: 800; }
+  .tc-more { font-size: 12.5px; color: var(--text-dim); text-align: center; margin: 8px 0 0; }
+  .tc-empty { font-size: 13px; color: var(--text-dim); text-align: center; margin: 10px 0 4px; }
 
   .scanner-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 20px; box-shadow: var(--shadow); }
 
@@ -190,10 +225,11 @@
   .item-row:last-child { border-bottom: none; }
   .item-top { display: flex; align-items: center; gap: 10px; }
   .item-emoji { font-size: 20px; flex-shrink: 0; line-height: 1; }
-  .item-name-input { flex: 1; min-width: 0; background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 9px 10px; color: var(--text); font-family: 'Space Grotesk', sans-serif; font-size: 13.5px; }
+  .item-name-input { flex: 1; min-width: 0; background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 9px 10px; color: var(--text); font-family: 'Plus Jakarta Sans', system-ui, sans-serif; font-size: 13.5px; }
   .item-name-input:focus { outline: none; border-color: var(--accent); }
   .source-tag { display: inline-block; font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: .03em; color: var(--text-dim); margin-left: 30px; }
   .source-tag.taco { color: var(--scan); font-weight: 600; }
+  .source-tag { display: none; }
   .btn-remove { flex-shrink: 0; width: 34px; height: 34px; border-radius: 50%; background: var(--surface-2); border: 1px solid var(--border); color: var(--text-dim); font-size: 15px; display: flex; align-items: center; justify-content: center; padding: 0; }
   .btn-remove svg { width: 16px; height: 16px; }
   @media (hover: hover) { .btn-remove:hover { background: var(--danger); border-color: var(--danger); color: #fff; } }
@@ -213,7 +249,8 @@
   .add-food-status { margin: 8px 0 0; font-size: 12.5px; color: var(--text-dim); min-height: 1em; }
   .add-food-status.error { color: var(--danger); }
   /* Aviso rápido (voltar para sair, item removido) */
-  .qp-toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom)); transform: translate(-50%, 20px); background: #211D18; color: #fff; padding: 12px 16px; border-radius: 14px; font-size: 14px; display: flex; gap: 14px; align-items: center; z-index: 3000; opacity: 0; pointer-events: none; transition: opacity .2s ease, transform .2s ease; box-shadow: 0 10px 30px rgba(0,0,0,.25); max-width: calc(100% - 32px); }
+  .about-note { font-size: 11.5px; color: var(--text-dim); text-align: center; margin: 22px 8px 0; line-height: 1.5; }
+  .qp-toast { position: fixed; left: 50%; bottom: calc(96px + env(safe-area-inset-bottom)); transform: translate(-50%, 20px); background: #15302A; color: #fff; padding: 12px 16px; border-radius: 14px; font-size: 14px; display: flex; gap: 14px; align-items: center; z-index: 3000; opacity: 0; pointer-events: none; transition: opacity .2s ease, transform .2s ease; box-shadow: 0 10px 30px rgba(0,0,0,.25); max-width: calc(100% - 32px); }
   .qp-toast.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
   .qp-toast button { width: auto; background: none; border: none; color: #FFAE00; font-weight: 700; padding: 0; font-size: 14px; }
   .item-numbers-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px 12px; }
@@ -228,7 +265,7 @@
 
   .observation { color: var(--text-dim); font-size: 12.5px; line-height: 1.5; margin: -6px 4px 0; }
 
-  button, select { font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 14px; border-radius: 10px; border: none; padding: 13px 18px; cursor: pointer; transition: opacity .15s, transform .1s; }
+  button, select { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; font-weight: 600; font-size: 14px; border-radius: 10px; border: none; padding: 13px 18px; cursor: pointer; transition: opacity .15s, transform .1s; }
   button:hover { opacity: .88; }
   button:active { transform: scale(0.98); }
   button:disabled { cursor: default; opacity: .6; }
@@ -262,7 +299,7 @@
   .calc-field { display: flex; flex-direction: column; gap: 5px; }
   .calc-field.full { grid-column: 1 / -1; }
   .calc-field label { font-size: 11px; color: var(--text-dim); }
-  .calc-field input, .calc-field select { width: 100%; background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 9px 10px; color: var(--text); font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 400; }
+  .calc-field input, .calc-field select { width: 100%; background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 9px 10px; color: var(--text); font-family: 'Plus Jakarta Sans', system-ui, sans-serif; font-size: 13px; font-weight: 400; }
   .calc-field input:focus, .calc-field select:focus { outline: none; border-color: var(--accent); }
   .calc-results { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
   .calc-result { display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; }
@@ -457,16 +494,18 @@
     <p class="notif-empty" id="notifEmpty" hidden>Nenhum aviso por enquanto.</p>
   </div>
 
-  <header>
-    <span class="eyebrow">Analisador de Proteína</span>
-    <h1>Aponte. Capture. Meça.</h1>
-    <p class="sub">Fotografe o prato, confira os macros e acompanhe sua dieta ao longo do tempo.</p>
+  <header class="topbar">
+    <span class="topbar-date" id="topbarDate"></span>
+    <h1 id="topbarTitle">Proteína</h1>
   </header>
 
-  <div class="tab-bar">
-    <button type="button" class="tab-btn active" id="tabBtnScanner" data-tab="scanner">Scanner</button>
-    <button type="button" class="tab-btn" id="tabBtnDieta" data-tab="dieta">Minha Dieta</button>
-  </div>
+  <nav class="bottom-nav" aria-label="Navegação principal">
+    <button type="button" class="tab-btn active" id="tabBtnScanner" data-tab="scanner"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Início</span></button>
+    <button type="button" class="tab-btn" id="tabBtnDiario" data-tab="diario"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/></svg><span>Diário</span></button>
+    <button type="button" class="nav-add" id="navAddBtn" aria-label="Analisar uma refeição"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+    <button type="button" class="tab-btn" id="tabBtnDieta" data-tab="dieta"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span>Relatórios</span></button>
+    <button type="button" class="tab-btn" id="tabBtnPerfil" data-tab="perfil"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg><span>Perfil</span></button>
+  </nav>
 
   <!-- ===== ABA SCANNER ===== -->
   <div class="tab-panel" id="tabScanner">
@@ -475,10 +514,31 @@
     </div>
     <p class="ios-hint" id="iosHint" hidden>No iPhone: toque em <strong>Compartilhar</strong> e depois em <strong>Adicionar à Tela de Início</strong> para instalar como app.</p>
 
-    <div class="today-mini">
-      <span class="today-mini-text">Hoje: <strong id="miniProt">0g</strong> proteína · <strong id="miniKcal">0</strong> kcal</span>
-      <button type="button" class="btn-link" id="miniDietaLink">ver dieta →</button>
-    </div>
+    <section class="today-card" aria-labelledby="todayCardTitle">
+      <h2 class="sr-only" id="todayCardTitle">Proteína de hoje</h2>
+      <div class="tc-ring">
+        <svg viewBox="0 0 200 200" aria-hidden="true">
+          <defs><linearGradient id="tcGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5BD6AE"/><stop offset="1" stop-color="#0E8667"/></linearGradient></defs>
+          <circle class="tc-ring-bg" cx="100" cy="100" r="86"/>
+          <circle class="tc-ring-fg" id="tcRingFg" cx="100" cy="100" r="86"/>
+        </svg>
+        <div class="tc-center">
+          <span class="tc-icon" aria-hidden="true">💪</span>
+          <span class="tc-value"><strong id="miniProt">0</strong> g</span>
+          <span class="tc-of" id="tcOf">proteína hoje</span>
+        </div>
+      </div>
+      <div class="tc-goal" id="tcGoal">
+        <span class="tc-goal-icon" aria-hidden="true">🍴</span>
+        <span class="tc-goal-text"><small>Meta diária</small><strong id="tcGoalValue">defina no Perfil</strong></span>
+        <span class="tc-goal-rest"><strong id="tcRest">--</strong><small id="tcRestLabel">restantes</small></span>
+      </div>
+      <div class="tc-sources">
+        <div class="tc-sources-head"><h3>Fontes de proteína</h3><span><strong id="miniKcal">0</strong> kcal hoje</span></div>
+        <ul class="tc-list" id="tcList"></ul>
+        <p class="tc-empty" id="tcEmpty">Nenhuma refeição registrada hoje. Toque no + para analisar o seu prato.</p>
+      </div>
+    </section>
 
     <div class="scanner-card" id="scannerCard">
       <label class="upload-zone" id="uploadZone">
@@ -527,19 +587,54 @@
       <button type="button" class="btn-retry" id="retryBtn">Tentar novamente</button>
     </div>
 
-    <div class="food-table-toggle-row">
-      <button type="button" class="btn-link" id="foodTableToggle">Tabela de alimentos aprendidos (<span id="foodTableCount">0</span>)</button>
-    </div>
-    <div class="food-table-panel" id="foodTablePanel" hidden>
-      <ul class="food-table-list" id="foodTableList"></ul>
-      <p class="food-table-empty" id="foodTableEmpty">Nenhum alimento aprendido ainda. Os itens das refeições que você registra viram referência para as próximas análises.</p>
-    </div>
 
-    <p class="disclaimer">Estimativa gerada por IA e pela tabela TACO a partir da imagem ou descrição por voz. Pratos mistos, molhos, sobreposição de alimentos e porções fora do enquadramento reduzem a precisão. Use como referência, não como medição exata.</p>
   </div>
 
-  <!-- ===== ABA MINHA DIETA ===== -->
+  <!-- ===== ABA RELATÓRIOS ===== -->
   <div class="tab-panel" id="tabDieta" hidden>
+    <h2 class="section-title">Hoje</h2>
+    <div class="card today-hero">
+      <div class="today-hero-kcal">
+        <span class="today-hero-value" id="heroKcalValue">0</span>
+        <span class="today-hero-label" id="heroKcalLabel">kcal hoje</span>
+      </div>
+      <div class="macro-progress-list" id="macroProgressList"></div>
+      <p class="chart-ref-note" id="heroNoProfileNote">Preencha seu perfil na aba Perfil para ver quanto ainda resta hoje e o progresso por macro.</p>
+    </div>
+
+    <h2 class="section-title">Resumo</h2>
+    <div class="stats-row">
+      <div class="stat-card"><span class="stat-value" id="statHojeKcal">0</span><span class="stat-label">kcal hoje</span></div>
+      <div class="stat-card"><span class="stat-value" id="statMediaMes">0</span><span class="stat-label">média kcal/dia (mês)</span></div>
+      <div class="stat-card"><span class="stat-value protein" id="statProtMes">0 g</span><span class="stat-label">proteína acumulada (mês)</span></div>
+      <div class="stat-card"><span class="stat-value" id="statDiasRegistrados">0</span><span class="stat-label">dias com refeição registrada</span></div>
+    </div>
+
+    <h2 class="section-title">Calorias por dia (últimos 14 dias)</h2>
+    <div class="card">
+      <div class="chart-wrap"><canvas id="dailyChart"></canvas></div>
+      <p class="chart-ref-note" id="dailyChartNote">Preencha seu perfil na aba Perfil para ver a linha de referência (gasto diário) no gráfico.</p>
+    </div>
+
+    <h2 class="section-title">Calorias por mês (média diária)</h2>
+    <div class="card">
+      <div class="chart-wrap"><canvas id="monthlyChart"></canvas></div>
+      <p class="chart-empty" id="monthlyChartEmpty" hidden>Ainda não há dados de meses anteriores suficientes.</p>
+    </div>
+
+  </div>
+
+  <!-- ===== ABA DIÁRIO ===== -->
+  <div class="tab-panel" id="tabDiario" hidden>
+    <h2 class="section-title">Refeições registradas</h2>
+    <div class="history-panel" id="historyPanel">
+      <ul class="history-list" id="historyList"></ul>
+      <p class="history-empty" id="historyEmpty">Nenhuma refeição registrada ainda.</p>
+    </div>
+  </div>
+
+  <!-- ===== ABA PERFIL ===== -->
+  <div class="tab-panel" id="tabPerfil" hidden>
     <h2 class="section-title">Seu perfil</h2>
     <div class="card">
       <div class="calc-grid">
@@ -552,6 +647,10 @@
             <option value="m">Masculino</option>
             <option value="f">Feminino</option>
           </select>
+        </div>
+        <div class="calc-field full">
+          <label>Meta de proteína (g por dia, opcional)</label>
+          <input type="number" id="perfilMetaProt" min="0" step="1" placeholder="Em branco: calculada pelo app">
         </div>
         <div class="calc-field full">
           <label>Nível de atividade</label>
@@ -572,41 +671,15 @@
       </div>
     </div>
 
-    <h2 class="section-title">Hoje</h2>
-    <div class="card today-hero">
-      <div class="today-hero-kcal">
-        <span class="today-hero-value" id="heroKcalValue">0</span>
-        <span class="today-hero-label" id="heroKcalLabel">kcal hoje</span>
-      </div>
-      <div class="macro-progress-list" id="macroProgressList"></div>
-      <p class="chart-ref-note" id="heroNoProfileNote">Preencha seu perfil acima pra ver quanto ainda resta hoje e o progresso por macro.</p>
+    <h2 class="section-title">Alimentos aprendidos</h2>
+    <div class="food-table-toggle-row" hidden>
+      <button type="button" class="btn-link" id="foodTableToggle">Tabela de alimentos aprendidos (<span id="foodTableCount">0</span>)</button>
     </div>
-
-    <h2 class="section-title">Resumo</h2>
-    <div class="stats-row">
-      <div class="stat-card"><span class="stat-value" id="statHojeKcal">0</span><span class="stat-label">kcal hoje</span></div>
-      <div class="stat-card"><span class="stat-value" id="statMediaMes">0</span><span class="stat-label">média kcal/dia (mês)</span></div>
-      <div class="stat-card"><span class="stat-value protein" id="statProtMes">0 g</span><span class="stat-label">proteína acumulada (mês)</span></div>
-      <div class="stat-card"><span class="stat-value" id="statDiasRegistrados">0</span><span class="stat-label">dias com refeição registrada</span></div>
+    <div class="food-table-panel" id="foodTablePanel">
+      <ul class="food-table-list" id="foodTableList"></ul>
+      <p class="food-table-empty" id="foodTableEmpty">Nenhum alimento aprendido ainda. Os itens das refeições que você registra viram referência para as próximas análises.</p>
     </div>
-
-    <h2 class="section-title">Calorias por dia (últimos 14 dias)</h2>
-    <div class="card">
-      <div class="chart-wrap"><canvas id="dailyChart"></canvas></div>
-      <p class="chart-ref-note" id="dailyChartNote">Preencha seu perfil acima pra ver a linha de referência (TDEE) no gráfico.</p>
-    </div>
-
-    <h2 class="section-title">Calorias por mês (média diária)</h2>
-    <div class="card">
-      <div class="chart-wrap"><canvas id="monthlyChart"></canvas></div>
-      <p class="chart-empty" id="monthlyChartEmpty" hidden>Ainda não há dados de meses anteriores suficientes.</p>
-    </div>
-
-    <h2 class="section-title">Histórico completo</h2>
-    <div class="history-panel" id="historyPanel">
-      <ul class="history-list" id="historyList"></ul>
-      <p class="history-empty" id="historyEmpty">Nenhuma refeição registrada ainda.</p>
-    </div>
+    <p class="about-note">Os valores são estimativas para acompanhamento do dia a dia e não substituem a orientação de um nutricionista.</p>
   </div>
 </div>
 
@@ -1747,7 +1820,7 @@ function getMacroTargets(perfil) {
   if (!perfil || !perfil.tdee) return null;
   return {
     kcal: Math.round(perfil.tdee),
-    proteina_g: Math.round(perfil.tdee * 0.3 / 4),
+    proteina_g: perfil.metaProteina ? Math.round(perfil.metaProteina) : Math.round(perfil.tdee * 0.3 / 4),
     carboidrato_g: Math.round(perfil.tdee * 0.4 / 4),
     gordura_g: Math.round(perfil.tdee * 0.3 / 9)
   };
@@ -2029,7 +2102,8 @@ function registerMeal() {
     carboidrato_g: totals.carboidrato_g,
     gordura_g: totals.gordura_g,
     calorias_kcal: totals.calorias_kcal,
-    itens: currentItems.map(it => it.nome)
+    itens: currentItems.map(it => it.nome),
+    itensDet: currentItems.map(it => ({ nome: it.nome, proteina_g: Math.round(Number(it.proteina_g) || 0) }))
   });
   saveDailyLog(log);
   learnFromItems(currentItems);
@@ -2064,8 +2138,64 @@ function renderTodayMini() {
   const log = loadDailyLog();
   const entry = log[todayKey()] || { refeicoes: [] };
   const totals = dayTotals(entry);
-  document.getElementById('miniProt').textContent = Math.round(totals.proteina_g) + 'g';
+  const prot = Math.round(totals.proteina_g);
+  document.getElementById('miniProt').textContent = prot;
   document.getElementById('miniKcal').textContent = Math.round(totals.calorias_kcal);
+
+  const targets = getMacroTargets(loadPerfil());
+  const goal = targets ? targets.proteina_g : 0;
+  const goalBox = document.getElementById('tcGoal');
+  goalBox.classList.remove('done', 'over');
+  if (goal) {
+    document.getElementById('tcOf').textContent = 'de ' + goal + ' g';
+    document.getElementById('tcGoalValue').textContent = goal + ' g';
+    const rest = goal - prot;
+    if (rest > 0) {
+      document.getElementById('tcRest').textContent = rest + ' g';
+      document.getElementById('tcRestLabel').textContent = 'restantes';
+    } else {
+      document.getElementById('tcRest').textContent = (rest === 0 ? '✓' : '+' + (-rest) + ' g');
+      document.getElementById('tcRestLabel').textContent = rest === 0 ? 'meta batida' : 'acima da meta';
+      goalBox.classList.add('done');
+    }
+  } else {
+    document.getElementById('tcOf').textContent = 'proteína hoje';
+    document.getElementById('tcGoalValue').textContent = 'defina no Perfil';
+    document.getElementById('tcRest').textContent = '--';
+    document.getElementById('tcRestLabel').textContent = 'restantes';
+  }
+  const C = 2 * Math.PI * 86;
+  const pct = goal ? Math.min(1, prot / goal) : (prot ? 0.08 : 0);
+  document.getElementById('tcRingFg').style.strokeDashoffset = String(C * (1 - pct));
+
+  // Fontes de proteína do dia, somadas por alimento
+  const sources = {};
+  (entry.refeicoes || []).forEach((r) => {
+    (r.itensDet || []).forEach((it) => {
+      const key = normalizeKey(it.nome);
+      if (!key) return;
+      if (!sources[key]) sources[key] = { nome: it.nome, g: 0 };
+      sources[key].g += Number(it.proteina_g) || 0;
+    });
+  });
+  const list = Object.values(sources).filter((x) => x.g > 0).sort((a, b) => b.g - a.g);
+  const ul = document.getElementById('tcList');
+  ul.innerHTML = '';
+  list.slice(0, 6).forEach((x) => {
+    const li = document.createElement('li');
+    const em = document.createElement('span'); em.className = 'tc-em'; em.textContent = getFoodEmoji(x.nome);
+    const nm = document.createElement('span'); nm.className = 'tc-name'; nm.textContent = x.nome.charAt(0).toUpperCase() + x.nome.slice(1);
+    const g = document.createElement('span'); g.className = 'tc-g'; g.textContent = Math.round(x.g) + ' g';
+    li.append(em, nm, g);
+    ul.appendChild(li);
+  });
+  if (list.length > 6) {
+    const more = document.createElement('li'); more.className = 'tc-more'; more.textContent = 'e mais ' + (list.length - 6) + ' alimentos';
+    ul.appendChild(more);
+  }
+  const hasMeals = (entry.refeicoes || []).length > 0;
+  document.getElementById('tcEmpty').hidden = list.length > 0;
+  if (hasMeals && !list.length) document.getElementById('tcEmpty').textContent = 'Os detalhes por alimento aparecem a partir das próximas refeições registradas.';
 }
 
 function formatDateLabel(key) {
@@ -2201,6 +2331,7 @@ function preencherCamposPerfil(perfil) {
   document.getElementById('perfilIdade').value = perfil.idade;
   document.getElementById('perfilSexo').value = perfil.sexo;
   document.getElementById('perfilAtividade').value = perfil.atividade;
+  document.getElementById('perfilMetaProt').value = perfil.metaProteina || '';
 }
 
 document.getElementById('perfilSalvarBtn').addEventListener('click', () => {
@@ -2214,7 +2345,8 @@ document.getElementById('perfilSalvarBtn').addEventListener('click', () => {
   const imc = peso / (alturaM * alturaM);
   const tmb = calcularTMB(peso, altura, idade, sexo);
   const tdee = tmb * atividade;
-  const perfil = { peso, altura, idade, sexo, atividade, imc, tmb, tdee };
+  const metaProteina = parseFloat(document.getElementById('perfilMetaProt').value) || null;
+  const perfil = { peso, altura, idade, sexo, atividade, imc, tmb, tdee, metaProteina };
   savePerfil(perfil);
   renderPerfilResultados(perfil);
   renderDashboard();
@@ -2280,7 +2412,7 @@ function renderTodayHero() {
   heroValue.style.color = restante >= 0 ? 'var(--accent)' : 'var(--danger)';
 
   const metas = {
-    Proteína: { valor: Math.round(perfil.tdee * 0.3 / 4), classe: 'protein' },
+    Proteína: { valor: (perfil.metaProteina ? Math.round(perfil.metaProteina) : Math.round(perfil.tdee * 0.3 / 4)), classe: 'protein' },
     Carboidrato: { valor: Math.round(perfil.tdee * 0.4 / 4), classe: 'carb' },
     Gordura: { valor: Math.round(perfil.tdee * 0.3 / 9), classe: 'fat' }
   };
@@ -2417,15 +2549,33 @@ function renderDashboard() {
 document.querySelectorAll('.tab-btn').forEach((btn) => {
   btn.addEventListener('click', () => activateTab(btn.dataset.tab));
 });
-document.getElementById('miniDietaLink').addEventListener('click', () => activateTab('dieta'));
+document.getElementById('navAddBtn').addEventListener('click', () => {
+  activateTab('scanner');
+  if (resultsEl.classList.contains('visible') || scannerCard.querySelector('.analysis-overlay, .voice-processing, .preview-wrap')) {
+    scannerCard.scrollIntoView({ behavior: reduceMotionPref() ? 'auto' : 'smooth', block: 'start' });
+    return;
+  }
+  fileInput.click();
+});
+const TAB_TITLES = { scanner: 'Proteína', diario: 'Diário', dieta: 'Relatórios', perfil: 'Perfil' };
+(function () {
+  const d = new Date();
+  const el = document.getElementById('topbarDate');
+  try { const t = d.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }); el.textContent = t.charAt(0).toUpperCase() + t.slice(1); } catch (e) {}
+})();
 
 let currentTab = 'scanner';
 function activateTab(tab) {
   currentTab = tab;
   document.querySelectorAll('.tab-btn').forEach((b) => b.classList.toggle('active', b.dataset.tab === tab));
-  document.getElementById('tabScanner').hidden = tab !== 'scanner';
-  document.getElementById('tabDieta').hidden = tab !== 'dieta';
-  if (tab === 'dieta') renderDashboard();
+  ['scanner', 'diario', 'dieta', 'perfil'].forEach((t) => {
+    const id = { scanner: 'tabScanner', diario: 'tabDiario', dieta: 'tabDieta', perfil: 'tabPerfil' }[t];
+    document.getElementById(id).hidden = tab !== t;
+  });
+  document.getElementById('topbarTitle').textContent = TAB_TITLES[tab] || 'Proteína';
+  if (tab === 'dieta' || tab === 'diario') renderDashboard();
+  if (tab === 'perfil') renderFoodTablePanel();
+  window.scrollTo(0, 0);
   if (typeof saveSession === 'function') saveSession();
 }
 
