@@ -71,6 +71,10 @@
   .topbar { text-align: center; margin: 2px 0 16px; padding: 0 50px; }
   .topbar-date { display: block; font-size: 12px; color: var(--text-dim); font-weight: 600; }
   .topbar h1 { font-size: 22px; font-weight: 800; margin: 2px 0 0; letter-spacing: -0.02em; }
+  .topbar-brand { display: inline-flex; align-items: center; gap: 9px; white-space: nowrap; }
+  .brand-q { width: 30px; height: 30px; flex-shrink: 0; }
+  .brand-p { color: var(--accent); }
+  @media (max-width: 380px) { .topbar-brand { font-size: 18px; gap: 7px; } .brand-q { width: 24px; height: 24px; } }
   .eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.16em; color: var(--accent); text-transform: uppercase; font-weight: 700; }
   h1 { font-size: 28px; font-weight: 700; margin: 10px 0 8px; letter-spacing: -0.01em; }
   .sub { color: var(--text-dim); font-size: 14px; line-height: 1.5; margin: 0; }
@@ -500,7 +504,7 @@
 
   <header class="topbar">
     <span class="topbar-date" id="topbarDate"></span>
-    <h1 id="topbarTitle">Proteína</h1>
+    <h1 id="topbarTitle"><span class="topbar-brand"><svg class="brand-q" viewBox="0 0 512 512" aria-hidden="true"><rect width="512" height="512" rx="120" fill="#15302A"/><circle cx="250" cy="236" r="140" fill="none" stroke="#23443B" stroke-width="50"/><path d="M297.9 367.6 A140 140 0 1 1 387.9 260.3" fill="none" stroke="#FFFFFF" stroke-width="50" stroke-linecap="round"/><path d="M381.6 283.9 A140 140 0 0 1 320.0 357.2" fill="none" stroke="#FF7A4D" stroke-width="50" stroke-linecap="round"/><path d="M262 300 Q 330 330 360 380 Q 384 418 430 424" fill="none" stroke="#22C9A0" stroke-width="46" stroke-linecap="round"/></svg><span>Quantas <span class="brand-p">Proteínas</span></span></span></h1>
   </header>
 
   <nav class="bottom-nav" aria-label="Navegação principal">
@@ -2569,7 +2573,8 @@ document.getElementById('navAddBtn').addEventListener('click', () => {
   }
   fileInput.click();
 });
-const TAB_TITLES = { scanner: 'Proteína', diario: 'Diário', dieta: 'Relatórios', perfil: 'Perfil' };
+const TOPBAR_BRAND = document.getElementById('topbarTitle').innerHTML;
+const TAB_TITLES = { scanner: null, diario: 'Diário', dieta: 'Relatórios', perfil: 'Perfil' };
 (function () {
   const d = new Date();
   const el = document.getElementById('topbarDate');
@@ -2584,7 +2589,8 @@ function activateTab(tab) {
     const id = { scanner: 'tabScanner', diario: 'tabDiario', dieta: 'tabDieta', perfil: 'tabPerfil' }[t];
     document.getElementById(id).hidden = tab !== t;
   });
-  document.getElementById('topbarTitle').textContent = TAB_TITLES[tab] || 'Proteína';
+  const tt = document.getElementById('topbarTitle');
+  if (TAB_TITLES[tab]) tt.textContent = TAB_TITLES[tab]; else tt.innerHTML = TOPBAR_BRAND;
   if (tab === 'dieta' || tab === 'diario') renderDashboard();
   if (tab === 'perfil') renderFoodTablePanel();
   window.scrollTo(0, 0);

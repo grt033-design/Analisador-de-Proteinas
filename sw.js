@@ -1,4 +1,4 @@
-const CACHE_NAME = 'analisador-proteina-v21';
+const CACHE_NAME = 'analisador-proteina-v22';
 const APP_SHELL = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './icon-maskable-512.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', (event) => {
