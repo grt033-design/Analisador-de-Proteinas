@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover">
-<title>Analisador de Proteína — Foto do Prato</title>
+<title>Quantas Proteínas | Foto do Prato</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#FBF7F2">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -98,6 +98,20 @@
   .btn-voice:hover { border-color: var(--fat); color: var(--fat); }
   .btn-voice.listening { border-color: var(--danger); color: var(--danger); border-style: solid; animation: voicePulse 1s ease-in-out infinite; }
   @keyframes voicePulse { 0%, 100% { opacity: 1; } 50% { opacity: .55; } }
+  /* Gravação por voz no estilo WhatsApp: grava até a pessoa tocar em Enviar */
+  .voice-rec { margin: 4px 12px 14px; padding: 14px; border-radius: 18px; background: var(--surface-2); border: 1px solid var(--border); text-align: left; }
+  .voice-rec-head { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: var(--danger); }
+  .voice-rec-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--danger); animation: voicePulse 1s ease-in-out infinite; }
+  .voice-rec-time { font-family: 'JetBrains Mono', monospace; color: var(--text); margin-left: auto; }
+  .voice-rec-text { margin: 10px 0 12px; min-height: 44px; max-height: 140px; overflow-y: auto; font-size: 14.5px; line-height: 1.45; color: var(--text); }
+  .voice-rec-text .interim { color: var(--text-dim); }
+  .voice-rec-text .hint { color: var(--text-dim); font-style: italic; }
+  .voice-rec-actions { display: flex; gap: 10px; align-items: center; }
+  .voice-rec-cancel { flex: 0 0 auto; width: 46px; height: 46px; border-radius: 50%; padding: 0; background: var(--surface); border: 1px solid var(--border); color: var(--text-dim); font-size: 18px; display: flex; align-items: center; justify-content: center; }
+  .voice-rec-send { flex: 1; height: 46px; border-radius: 23px; padding: 0 18px; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 700; background: var(--accent); color: #fff; border: none; font-size: 15px; }
+  .voice-rec-send:disabled { opacity: .45; }
+  .voice-rec-send svg { width: 18px; height: 18px; }
+  .voice-rec-note { margin-top: 8px; font-size: 11.5px; color: var(--text-dim); text-align: center; }
 
   .voice-processing { padding: 34px 20px; text-align: center; }
   .voice-transcript { color: var(--text); font-style: italic; font-size: 14px; margin: 0 0 18px; line-height: 1.5; }
@@ -183,6 +197,7 @@
   .source-tag.taco { color: var(--scan); font-weight: 600; }
   .btn-confirm { flex-shrink: 0; width: 34px; height: 34px; border-radius: 50%; background: var(--surface-2); border: 1px solid var(--border); color: var(--text-dim); font-size: 15px; display: flex; align-items: center; justify-content: center; padding: 0; }
   .item-row.confirmed .btn-confirm { background: var(--scan); border-color: var(--scan); color: #fff; }
+  @media (hover: hover) { .item-row.confirmed .btn-confirm:hover { background: var(--danger); border-color: var(--danger); } }
   .item-numbers-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px 12px; }
   .num-field { display: flex; align-items: center; gap: 5px; }
   .item-num-input { width: 56px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 7px 8px; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 12.5px; font-weight: 600; }
@@ -490,7 +505,7 @@
       <p class="food-table-empty" id="foodTableEmpty">Nenhum alimento confirmado ainda. Confirme leituras nas análises para o app aprender com você.</p>
     </div>
 
-    <p class="disclaimer">Estimativa gerada por IA e pela tabela TACO a partir da imagem ou descrição por voz. Pratos mistos, molhos, sobreposição de alimentos e porções fora do enquadramento reduzem a precisão — use como referência, não como medição exata.</p>
+    <p class="disclaimer">Estimativa gerada por IA e pela tabela TACO a partir da imagem ou descrição por voz. Pratos mistos, molhos, sobreposição de alimentos e porções fora do enquadramento reduzem a precisão. Use como referência, não como medição exata.</p>
   </div>
 
   <!-- ===== ABA MINHA DIETA ===== -->
@@ -569,7 +584,7 @@
 const BASE_PROMPT = `Você é um analista de nutrição especializado em estimar composição nutricional a partir de fotos de pratos de comida.
 Analise esta imagem e identifique cada item alimentar distinto visível no prato.
 Para cada item, estime o peso em gramas (usando referências visuais como o tamanho do prato, talheres e porções padrão) e os macronutrientes correspondentes: proteína, carboidrato e gordura, todos em gramas.
-Erros de estimativa de porção são a maior fonte de erro nesse tipo de análise — baseie-se em referências concretas da imagem e seja conservador quando a porção não estiver totalmente visível.
+Erros de estimativa de porção são a maior fonte de erro nesse tipo de análise: baseie-se em referências concretas da imagem e seja conservador quando a porção não estiver totalmente visível.
 
 Responda APENAS com um JSON válido, sem markdown, sem crases, sem texto antes ou depois, seguindo exatamente esta estrutura:
 {"itens":[{"nome":"string em português","peso_g":number,"proteina_g":number,"carboidrato_g":number,"gordura_g":number}],"confianca":"alta|média|baixa","observacao":"string curta em português explicando o que pode afetar a precisão desta estimativa específica"}`;
@@ -969,47 +984,178 @@ const voiceBtn = document.getElementById('voiceBtn');
 if (!SpeechRecognitionAPI) {
   voiceRow.hidden = true;
 } else {
-  let listening = false;
+  // Grava como áudio do WhatsApp: continua ouvindo (inclusive nas pausas) até a pessoa tocar em Enviar.
+  let rec = null;            // reconhecimento ativo
+  let recording = false;     // a pessoa ainda está gravando
+  let sending = false;
+  let committed = [];        // trechos finais de sessões anteriores (o navegador reinicia sozinho após silêncio)
+  let sessionFinals = [];    // trechos finais da sessão atual
+  let interimText = '';
+  let recStart = 0, recTimer = null;
+  let panel = null;
+
+  const mergeSegment = (list, seg) => {
+    seg = seg.trim();
+    if (!seg) return;
+    const last = list[list.length - 1];
+    // Alguns Androids repetem o texto acumulado em cada resultado: evita duplicar
+    if (last && seg.toLowerCase().startsWith(last.toLowerCase())) list[list.length - 1] = seg;
+    else if (last && last.toLowerCase().startsWith(seg.toLowerCase())) return;
+    else list.push(seg);
+  };
+  const fullText = () => committed.concat(sessionFinals).join(' ').replace(/\s+/g, ' ').trim();
+
+  function renderPanel() {
+    if (!panel) return;
+    const box = panel.querySelector('.voice-rec-text');
+    const finalTxt = fullText();
+    box.textContent = '';
+    if (!finalTxt && !interimText) {
+      const h = document.createElement('span');
+      h.className = 'hint';
+      h.textContent = 'Fale tudo o que tem no prato. Pode pausar para pensar, eu continuo ouvindo.';
+      box.appendChild(h);
+    } else {
+      box.appendChild(document.createTextNode(finalTxt + (finalTxt && interimText ? ' ' : '')));
+      if (interimText) {
+        const i = document.createElement('span');
+        i.className = 'interim';
+        i.textContent = interimText;
+        box.appendChild(i);
+      }
+      box.scrollTop = box.scrollHeight;
+    }
+    panel.querySelector('.voice-rec-send').disabled = !(finalTxt || interimText);
+  }
+
+  function tick() {
+    if (!panel) return;
+    const sec = Math.floor((Date.now() - recStart) / 1000);
+    panel.querySelector('.voice-rec-time').textContent = Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0');
+  }
+
+  function startSession() {
+    const r = new SpeechRecognitionAPI();
+    r.lang = 'pt-BR';
+    r.continuous = true;
+    r.interimResults = true;
+    r.maxAlternatives = 1;
+    sessionFinals = [];
+    r.onresult = (event) => {
+      const finals = [];
+      let interim = '';
+      for (let i = 0; i < event.results.length; i++) {
+        const res = event.results[i];
+        if (res.isFinal) mergeSegment(finals, res[0].transcript);
+        else interim += res[0].transcript;
+      }
+      sessionFinals = finals;
+      interimText = interim.trim();
+      renderPanel();
+    };
+    r.onerror = (ev) => {
+      if (ev.error === 'not-allowed' || ev.error === 'service-not-allowed') {
+        closePanel();
+        showError('Permita o uso do microfone no navegador para descrever a refeição por voz.');
+      }
+      // 'no-speech' e 'aborted' são normais: o onend decide se reinicia
+    };
+    r.onend = () => {
+      // Guarda o que foi dito nesta sessão (inclusive o trecho que ainda não tinha virado final)
+      sessionFinals.forEach((t) => mergeSegment(committed, t));
+      if (interimText) mergeSegment(committed, interimText);
+      sessionFinals = [];
+      interimText = '';
+      if (rec !== r) return;
+      if (recording) {
+        try { startSession(); } catch (e) { /* tenta de novo no próximo toque */ }
+      } else if (sending) {
+        sending = false;
+        submitTranscript();
+      }
+      renderPanel();
+    };
+    rec = r;
+    r.start();
+  }
+
+  function openPanel() {
+    voiceBtn.hidden = true;
+    panel = document.createElement('div');
+    panel.className = 'voice-rec';
+    panel.innerHTML =
+      '<div class="voice-rec-head"><span class="voice-rec-dot"></span><span>Gravando</span><span class="voice-rec-time">0:00</span></div>' +
+      '<div class="voice-rec-text" aria-live="polite"></div>' +
+      '<div class="voice-rec-actions">' +
+        '<button type="button" class="voice-rec-cancel" aria-label="Cancelar gravação" title="Cancelar">🗑</button>' +
+        '<button type="button" class="voice-rec-send"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3.4 20.4 21 12 3.4 3.6 3.4 10.1 15 12 3.4 13.9z"/></svg>Enviar</button>' +
+      '</div>' +
+      '<p class="voice-rec-note">Toque em Enviar quando terminar de falar.</p>';
+    voiceRow.appendChild(panel);
+    panel.querySelector('.voice-rec-cancel').addEventListener('click', cancelRecording);
+    panel.querySelector('.voice-rec-send').addEventListener('click', sendRecording);
+    recStart = Date.now();
+    recTimer = setInterval(tick, 500);
+    renderPanel();
+  }
+
+  function closePanel() {
+    recording = false;
+    sending = false;
+    clearInterval(recTimer);
+    if (panel) panel.remove();
+    panel = null;
+    voiceBtn.hidden = false;
+    const r = rec;
+    rec = null;
+    if (r) { try { r.abort(); } catch (e) {} }
+  }
+
+  function cancelRecording() {
+    committed = []; sessionFinals = []; interimText = '';
+    closePanel();
+  }
+
+  function sendRecording() {
+    if (!recording) return;
+    recording = false;
+    sending = true;
+    const btn = panel && panel.querySelector('.voice-rec-send');
+    if (btn) { btn.disabled = true; btn.lastChild.textContent = 'Enviando...'; }
+    // stop() entrega o último trecho no onresult/onend; se o navegador não responder, envia assim mesmo
+    try { rec && rec.stop(); } catch (e) {}
+    setTimeout(() => { if (sending) { sending = false; submitTranscript(); } }, 1500);
+  }
+
+  async function submitTranscript() {
+    sessionFinals.forEach((t) => mergeSegment(committed, t));
+    if (interimText) mergeSegment(committed, interimText);
+    const transcript = committed.join(' ').replace(/\s+/g, ' ').trim();
+    committed = []; sessionFinals = []; interimText = '';
+    closePanel();
+    if (!transcript) {
+      showError('Não consegui ouvir nada. Toque no microfone e tente de novo.');
+      return;
+    }
+    resultsEl.classList.remove('visible');
+    errorBox.classList.remove('visible');
+    lastDataUrl = null;
+    lastRetryFn = () => analyzeText(transcript);
+    showVoiceProcessing(transcript);
+    try {
+      const parsed = await analyzeText(transcript);
+      await finishAndRender(parsed);
+    } catch (err) {
+      showError(err.message || 'Não foi possível analisar a descrição.');
+    }
+  }
 
   voiceBtn.addEventListener('click', () => {
-    if (listening) return;
-    const recognition = new SpeechRecognitionAPI();
-    recognition.lang = 'pt-BR';
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 1;
-
-    listening = true;
-    voiceBtn.textContent = '🎤 Ouvindo... fale agora';
-    voiceBtn.classList.add('listening');
-
-    recognition.onresult = async (event) => {
-      const transcript = event.results[0][0].transcript;
-      resultsEl.classList.remove('visible');
-      errorBox.classList.remove('visible');
-      lastDataUrl = null;
-      lastRetryFn = () => analyzeText(transcript);
-      showVoiceProcessing(transcript);
-      try {
-        const parsed = await analyzeText(transcript);
-        await finishAndRender(parsed);
-      } catch (err) {
-        showError(err.message || 'Não foi possível analisar a descrição.');
-      }
-    };
-
-    recognition.onerror = () => {
-      listening = false;
-      voiceBtn.textContent = '🎤 Ou descreva por voz';
-      voiceBtn.classList.remove('listening');
-    };
-
-    recognition.onend = () => {
-      listening = false;
-      voiceBtn.textContent = '🎤 Ou descreva por voz';
-      voiceBtn.classList.remove('listening');
-    };
-
-    recognition.start();
+    if (recording || panel) return;
+    committed = []; sessionFinals = []; interimText = '';
+    recording = true;
+    openPanel();
+    try { startSession(); } catch (e) { closePanel(); showError('Não foi possível iniciar o microfone.'); }
   });
 }
 
@@ -1187,7 +1333,9 @@ function renderItemList() {
     const confirmBtn = document.createElement('button');
     confirmBtn.type = 'button';
     confirmBtn.className = 'btn-confirm';
-    confirmBtn.title = 'Confirmar leitura';
+    confirmBtn.title = item.confirmado ? 'Desfazer confirmação' : 'Confirmar leitura';
+    confirmBtn.setAttribute('aria-label', item.confirmado ? 'Desfazer confirmação de ' + item.nome : 'Confirmar leitura de ' + item.nome);
+    confirmBtn.setAttribute('aria-pressed', item.confirmado ? 'true' : 'false');
     confirmBtn.dataset.idx = idx;
     confirmBtn.textContent = '✓';
 
@@ -1219,7 +1367,8 @@ itemListEl.addEventListener('input', (e) => {
   if (!item) return;
   item[field] = field === 'nome' ? e.target.value : (parseFloat(e.target.value) || 0);
   if (item.confirmado) {
-    item.confirmado = false;
+    // Mudou um número depois de confirmar: desfaz o aprendizado para ele não contar com o valor antigo
+    unconfirmItem(Number(idx), false);
     const li = e.target.closest('.item-row');
     if (li) li.classList.remove('confirmed');
   }
@@ -1233,7 +1382,9 @@ itemListEl.addEventListener('input', (e) => {
 itemListEl.addEventListener('click', (e) => {
   const btn = e.target.closest('.btn-confirm');
   if (!btn) return;
-  confirmItem(Number(btn.dataset.idx));
+  const i = Number(btn.dataset.idx);
+  if (currentItems[i] && currentItems[i].confirmado) unconfirmItem(i, true);
+  else confirmItem(i);
 });
 
 function updateTotal() {
@@ -1263,6 +1414,8 @@ function confirmItem(idx) {
   if (!key) return;
   const table = loadFoodTable();
   const existing = table[key];
+  // Guarda como a tabela estava, para poder desfazer se a pessoa marcou por engano
+  item._undo = { key, before: existing ? JSON.parse(JSON.stringify(existing)) : null };
   if (existing) {
     const n = existing.confirmacoes;
     existing.peso_g = avg(existing.peso_g, item.peso_g, n);
@@ -1279,6 +1432,22 @@ function confirmItem(idx) {
   item.confirmado = true;
   renderItemList();
   updateTotal();
+  updateFoodTableCount();
+}
+
+function unconfirmItem(idx, rerender) {
+  const item = currentItems[idx];
+  if (!item || !item.confirmado) return;
+  const undo = item._undo;
+  if (undo && undo.key) {
+    const table = loadFoodTable();
+    if (undo.before) table[undo.key] = undo.before;
+    else delete table[undo.key];
+    saveFoodTable(table);
+  }
+  item._undo = null;
+  item.confirmado = false;
+  if (rerender) { renderItemList(); updateTotal(); }
   updateFoodTableCount();
 }
 
@@ -1386,9 +1555,9 @@ function dayTotals(dayEntry) {
 // --- Alerta sonoro e visual de meta calórica ---
 const NUTRITION_TIPS = [
   'Prefira água, chá sem açúcar ou café puro pelo resto do dia.',
-  'Se for comer mais alguma coisa, priorize proteína magra e vegetais — eles saciam com menos calorias.',
+  'Se for comer mais alguma coisa, priorize proteína magra e vegetais: eles saciam com menos calorias.',
   'Evite frituras, doces e bebidas açucaradas nas próximas refeições.',
-  'Não pule a próxima refeição — isso costuma levar a comer demais depois. Ajuste a porção, não a quantidade de refeições.',
+  'Não pule a próxima refeição, isso costuma levar a comer demais depois. Ajuste a porção, não a quantidade de refeições.',
   'Uma caminhada leve depois das refeições ajuda a digestão, sem precisar ser intensa.',
   'Coma devagar e preste atenção aos sinais de saciedade antes de repetir o prato.'
 ];
