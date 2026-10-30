@@ -305,6 +305,9 @@
   .calc-result { display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; }
   .calc-result-value { font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 700; color: var(--accent); }
   .calc-result-label { font-size: 10px; color: var(--text-dim); }
+  .calc-result-title { font-size: 11px; font-weight: 800; color: var(--text); letter-spacing: .04em; }
+  .calc-result-cat { margin-top: 3px; font-size: 11px; font-weight: 700; color: var(--accent-dim); background: var(--surface-2); border-radius: 999px; padding: 3px 9px; }
+  .calc-result-cat.note { font-size: 10px; font-weight: 500; color: var(--text-dim); background: none; padding: 0; line-height: 1.35; }
 
   .stats-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px; }
   .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; text-align: center; box-shadow: var(--shadow); }
@@ -665,9 +668,9 @@
       </div>
       <button type="button" class="btn-primary" id="perfilSalvarBtn">Calcular e salvar</button>
       <div class="calc-results" id="calcResults" hidden>
-        <div class="calc-result"><span class="calc-result-value" id="resultImc">0</span><span class="calc-result-label" id="resultImcCategoria">IMC</span></div>
-        <div class="calc-result"><span class="calc-result-value" id="resultTmb">0</span><span class="calc-result-label">TMB (kcal/dia, repouso)</span></div>
-        <div class="calc-result" style="grid-column: 1 / -1;"><span class="calc-result-value" id="resultTdee">0</span><span class="calc-result-label">gasto diário estimado (kcal) - usado como referência nos gráficos</span></div>
+        <div class="calc-result"><span class="calc-result-title">IMC</span><span class="calc-result-value" id="resultImc">0</span><span class="calc-result-label">Índice de massa corporal</span><span class="calc-result-cat" id="resultImcCategoria"></span></div>
+        <div class="calc-result"><span class="calc-result-title">TMB</span><span class="calc-result-value" id="resultTmb">0</span><span class="calc-result-label">Taxa metabólica basal (kcal/dia em repouso)</span></div>
+        <div class="calc-result" style="grid-column: 1 / -1;"><span class="calc-result-value" id="resultTdee">0</span><span class="calc-result-label">Gasto diário estimado (kcal), usado como referência nos gráficos</span></div>
       </div>
     </div>
 
@@ -2317,8 +2320,16 @@ function renderPerfilResultados(perfil) {
     calcResults.hidden = true;
     return;
   }
-  document.getElementById('resultImc').textContent = perfil.imc.toFixed(1);
-  document.getElementById('resultImcCategoria').textContent = classificarIMC(perfil.imc);
+  document.getElementById('resultImc').textContent = perfil.imc.toFixed(1).replace('.', ',');
+  // A classificação por faixas do IMC vale para adultos; abaixo de 18 anos usa curvas por idade e sexo
+  const catEl = document.getElementById('resultImcCategoria');
+  if (perfil.idade && perfil.idade < 18) {
+    catEl.textContent = 'Abaixo de 18 anos, o IMC é avaliado por curvas de idade e sexo. Consulte um profissional.';
+    catEl.classList.add('note');
+  } else {
+    catEl.textContent = 'Faixa: ' + classificarIMC(perfil.imc).toLowerCase();
+    catEl.classList.remove('note');
+  }
   document.getElementById('resultTmb').textContent = Math.round(perfil.tmb);
   document.getElementById('resultTdee').textContent = Math.round(perfil.tdee);
   calcResults.hidden = false;
