@@ -1,3 +1,9 @@
 [build]
   publish = "."
   functions = "netlify/functions"
+
+# O app instalado abre por /inicio, para separar no Cloudflare quem abre pelo ícone
+[[redirects]]
+  from = "/inicio"
+  to = "/index.html"
+  status = 200

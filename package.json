@@ -1,0 +1,8 @@
+{
+  "name": "quantas-proteinas-app",
+  "private": true,
+  "type": "commonjs",
+  "dependencies": {
+    "@netlify/blobs": "8.2.0"
+  }
+}

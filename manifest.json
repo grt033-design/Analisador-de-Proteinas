@@ -2,7 +2,7 @@
   "name": "Quantas Proteínas",
   "short_name": "Proteínas",
   "description": "Estime a proteína do prato a partir de uma foto",
-  "start_url": "./",
+  "start_url": "./inicio",
   "scope": "./",
   "display": "standalone",
   "background_color": "#F1F7F4",

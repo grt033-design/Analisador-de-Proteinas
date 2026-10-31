@@ -2121,6 +2121,7 @@ function registerMeal() {
   });
   saveDailyLog(log);
   learnFromItems(currentItems);
+  qpMetric('meal');
   mealRegistered = true;
   saveSession();
   updateRegisterButton();
@@ -2754,11 +2755,43 @@ window.addEventListener('appinstalled', () => {
   installRow.hidden = true;
   iosHint.hidden = true;
   try { localStorage.setItem('proteina_app_instalado', '1'); } catch (e) {}
+  qpMetric('install');
 });
 
 const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
 let jaInstalado = false;
 try { jaInstalado = localStorage.getItem('proteina_app_instalado') === '1'; } catch (e) {}
+// --- Contagem anônima de uso (código aleatório do aparelho, sem dados pessoais) ---
+function qpDeviceId() {
+  try {
+    let id = localStorage.getItem('qp_dev');
+    if (!id) {
+      const a = new Uint8Array(16); crypto.getRandomValues(a);
+      id = Array.from(a, (b) => b.toString(16).padStart(2, '0')).join('');
+      localStorage.setItem('qp_dev', id);
+    }
+    return id;
+  } catch (e) { return null; }
+}
+function qpMetric(e) {
+  const id = qpDeviceId();
+  if (!id) return;
+  const ua = navigator.userAgent;
+  const os = /iphone|ipad|ipod/i.test(ua) ? 'ios' : /android/i.test(ua) ? 'android' : /windows|macintosh|linux|cros/i.test(ua) ? 'desktop' : 'outro';
+  try {
+    fetch('/api/metrics', { method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ e, id, sa: isStandalone, os }) }).catch(() => {});
+  } catch (err) {}
+}
+(function qpDailyOpen() {
+  // Uma contagem por aparelho por dia; quem abre pelo ícone conta também como instalado
+  const d = new Date().toLocaleDateString('en-CA');
+  let last = null;
+  try { last = localStorage.getItem('qp_open_' + (isStandalone ? 'sa' : 'web')); } catch (e) {}
+  if (last === d) return;
+  try { localStorage.setItem('qp_open_' + (isStandalone ? 'sa' : 'web'), d); } catch (e) {}
+  qpMetric('open');
+})();
+
 if (isStandalone) {
   installRow.hidden = true;
   iosHint.hidden = true;
